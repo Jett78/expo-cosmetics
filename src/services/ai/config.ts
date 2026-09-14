@@ -1,8 +1,6 @@
 import type { VisualSearchProviderId } from '../../types/visual-search';
 
 const providerAliasMap = {
-  tensorflow: 'tflite',
-  tflite: 'tflite',
   remote: 'remote',
   none: 'none',
 } as const;

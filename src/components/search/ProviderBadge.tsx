@@ -11,7 +11,6 @@ type ProviderBadgeProps = {
 };
 
 const labels: Record<VisualSearchProviderId, string> = {
-  tflite: 'TFLite local search',
   remote: 'Remote AI provider',
   none: 'Visual search disabled',
 };

@@ -62,7 +62,7 @@ const VisualSearchPreviewScreen = ({ route }: VisualSearchPreviewScreenProps) =>
         {!isConfigured ? (
           <EmptyState
             title='Search provider needs configuration'
-            description='Set the provider env vars or switch to the TFLite/local option in .env.'
+            description='Set the provider env vars in .env to enable visual search.'
           />
         ) : null}
 

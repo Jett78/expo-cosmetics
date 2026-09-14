@@ -43,7 +43,7 @@ module.exports = {
           cameraPermission: 'The app uses your camera for visual product search.',
         },
       ],
-      'react-native-fast-tflite',
+
     ],
     jsEngine: 'hermes',
     extra: {

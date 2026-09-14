@@ -1,4 +1,4 @@
-export type VisualSearchProviderId = 'tflite' | 'remote' | 'none';
+export type VisualSearchProviderId = 'remote' | 'none';
 
 export type VisualSearchPrediction = {
   label: string;
