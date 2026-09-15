@@ -2,13 +2,13 @@ import { Platform, StyleSheet } from 'react-native';
 import { shadows, spacing, typography } from '../../design-system';
 
 export const styles = (
-  paddingVertical?,
-  borderWidth?,
-  borderRadius?,
-  borderColor?,
-  marginBottom?,
-  backgroundColor?,
-  textColor?
+  paddingVertical: number = 0,
+  borderWidth: number = 1,
+  borderRadius: number = 12,
+  borderColor: string = 'transparent',
+  marginBottom: number = 12,
+  backgroundColor?: string,
+  textColor?: string
 ) =>
   StyleSheet.create({
     textInput: {

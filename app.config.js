@@ -2,21 +2,23 @@ const IS_DEV_CLIENT = process.env.EXPO_PUBLIC_USE_DEV_CLIENT !== 'false';
 
 module.exports = {
   expo: {
-    name: process.env.EXPO_PUBLIC_APP_NAME ?? 'mobile',
-    slug: process.env.EXPO_PUBLIC_APP_SLUG ?? 'mobile',
+    name: process.env.EXPO_PUBLIC_APP_NAME ?? 'Glow',
+    slug: process.env.EXPO_PUBLIC_APP_SLUG ?? 'glow-cosmetics',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
+    scheme: 'glow-cosmetics',
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#FDF8F6',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
+      bundleIdentifier: 'com.glow.cosmetics',
       infoPlist: {
         NSCameraUsageDescription: 'Camera access is used for visual product search.',
         NSPhotoLibraryUsageDescription: 'Photo library access is used for visual product search.',
@@ -25,15 +27,18 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FDF8F6',
       },
+      package: 'com.glow.cosmetics',
       permissions: ['CAMERA', 'READ_MEDIA_IMAGES'],
       blockedPermissions: ['android.permission.RECORD_AUDIO'],
     },
     web: {
       favicon: './assets/favicon.png',
+      bundler: 'metro',
     },
     plugins: [
+      'expo-router',
       ...(IS_DEV_CLIENT ? ['expo-dev-client'] : []),
       'expo-splash-screen',
       [
@@ -43,10 +48,12 @@ module.exports = {
           cameraPermission: 'The app uses your camera for visual product search.',
         },
       ],
-
     ],
     jsEngine: 'hermes',
     extra: {
+      router: {
+        origin: false,
+      },
       liquidGlassDefaultEnabled: process.env.EXPO_PUBLIC_LIQUID_GLASS_ENABLED !== 'false',
       visualSearchProvider: process.env.EXPO_PUBLIC_VISUAL_SEARCH_PROVIDER ?? 'none',
     },

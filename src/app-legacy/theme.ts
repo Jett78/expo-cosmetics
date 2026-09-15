@@ -1,6 +1,5 @@
 import { createTheme } from '@rneui/themed';
 import { useMemo } from 'react';
-import { useColorScheme } from 'react-native';
 
 import { darkColors, designTokens, lightColors } from '../design-system';
 import { theme } from '../styles/Theme';
@@ -17,7 +16,7 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
           color: colors.textPrimary,
         },
         h1Style: {
-          ...designTokens.typography.titleLarge,
+          ...designTokens.typography.h1,
           color: colors.textPrimary,
         },
         h2Style: {
@@ -52,8 +51,7 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
 };
 
 export const useAppThemeFactory = () => {
-  const colorScheme = useColorScheme();
-  const mode = colorScheme === 'dark' ? 'dark' : 'light';
+  const mode = 'light' as const;
 
-  return useMemo(() => createAppTheme(mode), [mode]);
+  return useMemo(() => createAppTheme(mode), []);
 };
