@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useActiveProducts } from '../../src/services/product/hooks';
@@ -20,11 +21,29 @@ import ProductCard from '../../src/components/ProductCard/Card';
 
 export default function SearchScreen() {
   const { colors } = useAppTheme();
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const params = useLocalSearchParams<{ query?: string; brandId?: string }>();
+  const { data: allProducts, isLoading } = useActiveProducts();
+
+  const getInitialQuery = useCallback(() => {
+    if (params.query) return params.query;
+    if (params.brandId && allProducts) {
+      const product = allProducts.find((p) => p.brand?.id === params.brandId);
+      return product?.brand?.name ?? '';
+    }
+    return '';
+  }, [params.query, params.brandId, allProducts]);
+
+  const [query, setQuery] = useState(getInitialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(getInitialQuery);
   const [isFocused, setIsFocused] = useState(false);
 
-  const { data: allProducts, isLoading } = useActiveProducts();
+  React.useEffect(() => {
+    const newQuery = getInitialQuery();
+    if (newQuery) {
+      setQuery(newQuery);
+      setDebouncedQuery(newQuery);
+    }
+  }, [getInitialQuery]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
