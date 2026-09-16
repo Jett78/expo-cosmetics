@@ -111,7 +111,7 @@ export default function HomeScreen() {
           />
         </View>
 
-        {midBanners[0] && <MidBanner banner={midBanners[0]} />}
+        <MidBanner banners={midBanners} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Best Sellers</Text>

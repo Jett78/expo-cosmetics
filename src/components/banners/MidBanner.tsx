@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
@@ -6,36 +7,101 @@ import { spacing, radius } from '../../design-system';
 import type { ApiBanner } from '../../types/banner';
 import { resolveBannerLink } from '../../utils/resolveBannerLink';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const GAP = 12;
+const CONTAINER_MARGIN = 16;
+const ITEM_WIDTH = SCREEN_WIDTH - CONTAINER_MARGIN * 2 - GAP;
+
 type MidBannerProps = {
-  banner: ApiBanner;
+  banners: ApiBanner[];
 };
 
-export default function MidBanner({ banner }: MidBannerProps) {
+export default function MidBanner({ banners }: MidBannerProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
-  const { route, params } = resolveBannerLink(banner.buttonLink);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % banners.length;
+        flatListRef.current?.scrollToOffset({ offset: next * (ITEM_WIDTH + GAP), animated: true });
+        return next;
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  if (banners.length === 0) return null;
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => router.push({ pathname: route, params })}>
-        <Image
-          source={{ uri: banner.imageLink.original }}
-          style={styles.image}
-          contentFit="cover"
-        />
-      </Pressable>
+      <FlatList
+        ref={flatListRef}
+        data={banners}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={ITEM_WIDTH + GAP}
+        decelerationRate="fast"
+        onMomentumScrollEnd={(e) => {
+          const index = Math.round(e.nativeEvent.contentOffset.x / (ITEM_WIDTH + GAP));
+          setActiveIndex(index);
+        }}
+        renderItem={({ item }) => {
+          const { route, params } = resolveBannerLink(item.buttonLink);
+          return (
+            <Pressable
+              onPress={() => router.push({ pathname: route, params })}
+              style={{ marginRight: GAP }}
+            >
+              <Image
+                source={{ uri: item.imageLink.original }}
+                style={[styles.image, { width: ITEM_WIDTH }]}
+                contentFit="cover"
+              />
+            </Pressable>
+          );
+        }}
+        keyExtractor={(item) => item.id}
+      />
+      {banners.length > 1 && (
+        <View style={styles.dots}>
+          {banners.map((_, i) => (
+            <View
+              key={i}
+              style={[styles.dot, i === activeIndex && styles.dotActive]}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: spacing.xl,
     marginTop: spacing['2xl'],
+  },
+  image: {
+    height: 160,
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
-  image: {
-    width: '100%',
-    height: 160,
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  dotActive: {
+    width: 20,
+    backgroundColor: '#C4876E',
   },
 });
