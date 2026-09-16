@@ -4,16 +4,38 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 
+import { useMemo } from 'react';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { spacing, radius, typography, shadows } from '../../src/design-system';
-import { categories } from '../../src/data/categories';
-import { brands } from '../../src/data/brands';
-import { products } from '../../src/data/products';
+import { useCategories } from '../../src/services/category/hooks';
+import { useProducts, useActiveProducts } from '../../src/services/product/hooks';
+import ProductCard from '../../src/components/ProductCard/Card';
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
 
 export default function ExploreScreen() {
   const { colors } = useAppTheme();
+  const { data: categories } = useCategories();
+  const { data: trendingData } = useProducts({ page: 1, sortBy: 'popular' });
+  const { data: allProducts } = useActiveProducts();
 
-  const trendingProducts = products.filter((p) => p.rating >= 4.6);
+  const trendingProducts = trendingData?.products ?? [];
+
+  const uniqueBrands = useMemo(() => {
+    if (!allProducts) return [];
+    const brandMap = new Map<string, { id: string; name: string }>();
+    for (const product of allProducts) {
+      if (product.brand?.name && !brandMap.has(product.brand.name)) {
+        brandMap.set(product.brand.name, {
+          id: product.brand.id,
+          name: product.brand.name,
+        });
+      }
+    }
+    return Array.from(brandMap.values());
+  }, [allProducts]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -48,10 +70,13 @@ export default function ExploreScreen() {
                 renderItem={({ item }) => (
                   <Link href={`/category/${item.slug}`} asChild>
                     <Pressable style={StyleSheet.flatten([styles.categoryCard, { backgroundColor: colors.surface }])}>
-                      <Image source={item.image} style={styles.categoryImage} contentFit="cover" />
+                      {item.image ? (
+                        <Image source={{ uri: item.image }} style={styles.categoryImage} contentFit="cover" />
+                      ) : (
+                        <View style={[styles.categoryImage, { backgroundColor: colors.surfaceMuted }]} />
+                      )}
                       <View style={[styles.categoryOverlay, { backgroundColor: colors.overlayStrong }]}>
                         <Text style={styles.categoryName}>{item.name}</Text>
-                        <Text style={styles.categoryCount}>{item.productCount} products</Text>
                       </View>
                     </Pressable>
                   </Link>
@@ -67,11 +92,10 @@ export default function ExploreScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.brandList}
               >
-                {brands.map((item) => (
-                  <Link key={item.id} href={`/brand/${item.id}`} asChild>
+                {uniqueBrands.map((item) => (
+                  <Link key={item.id} href={`/brand/${slugify(item.name)}`} asChild>
                     <Pressable style={StyleSheet.flatten([styles.brandCard, { backgroundColor: colors.surface, borderColor: colors.borderSubtle }])}>
                       <Text style={[styles.brandName, { color: colors.textPrimary }]}>{item.name}</Text>
-                      <Text style={[styles.brandTagline, { color: colors.textSecondary }]}>{item.tagline}</Text>
                     </Pressable>
                   </Link>
                 ))}
@@ -91,38 +115,7 @@ export default function ExploreScreen() {
           </View>
         }
         ListFooterComponentStyle={styles.trendingHeader}
-        renderItem={({ item }) => (
-          <Link href={`/product/${item.id}`} asChild>
-            <Pressable style={StyleSheet.flatten([styles.productCard, { backgroundColor: colors.surface }])}>
-              <Image source={item.image} style={styles.productImage} contentFit="contain" />
-              <View style={styles.productInfo}>
-                <Text style={[styles.productBrand, { color: colors.textSecondary }]}>{item.brand}</Text>
-                <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <View style={styles.priceRow}>
-                  {item.salePrice ? (
-                    <>
-                      <Text style={[styles.salePrice, { color: colors.danger }]}>
-                        {item.currency} {item.salePrice.toLocaleString()}
-                      </Text>
-                      <Text style={[styles.originalPrice, { color: colors.textMuted }]}>
-                        {item.currency} {item.price.toLocaleString()}
-                      </Text>
-                    </>
-                  ) : (
-                    <Text style={[styles.price, { color: colors.textPrimary }]}>
-                      {item.currency} {item.price.toLocaleString()}
-                    </Text>
-                  )}
-                </View>
-              </View>
-              <Pressable style={styles.heartIcon}>
-                <Ionicons name="heart-outline" size={18} color={colors.textSecondary} />
-              </Pressable>
-            </Pressable>
-          </Link>
-        )}
+        renderItem={({ item }) => <ProductCard product={item} />}
         keyExtractor={(item) => item.id}
       />
     </View>
@@ -224,54 +217,5 @@ const styles = StyleSheet.create({
   productGrid: {
     gap: spacing.md,
     paddingHorizontal: spacing.xl,
-  },
-  productCard: {
-    flex: 1,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  productImage: {
-    width: '100%',
-    height: 160,
-  },
-  productInfo: {
-    padding: spacing.md,
-  },
-  productBrand: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: spacing.xxs,
-  },
-  productName: {
-    ...typography.bodyStrong,
-    marginBottom: spacing.xs,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  price: {
-    ...typography.priceSmall,
-  },
-  salePrice: {
-    ...typography.priceSmall,
-  },
-  originalPrice: {
-    ...typography.caption,
-    textDecorationLine: 'line-through',
-  },
-  heartIcon: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

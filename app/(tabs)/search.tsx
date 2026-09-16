@@ -6,22 +6,25 @@ import {
   TouchableOpacity,
   TextInput,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { Link } from 'expo-router';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
-import { products, Product } from '../../src/data/products';
+import { useActiveProducts } from '../../src/services/product/hooks';
 import { popularSearches, recentSearches } from '../../src/data/search';
-import { spacing, radius, typography, shadows } from '../../src/design-system';
+import { spacing, radius, typography } from '../../src/design-system';
+import type { ApiProduct } from '../../src/types';
+import ProductCard from '../../src/components/ProductCard/Card';
 
 export default function SearchScreen() {
   const { colors } = useAppTheme();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+
+  const { data: allProducts, isLoading } = useActiveProducts();
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,16 +34,16 @@ export default function SearchScreen() {
   }, [query]);
 
   const filteredProducts = useMemo(() => {
-    if (!debouncedQuery.trim()) return [];
+    if (!debouncedQuery.trim() || !allProducts) return [];
     const q = debouncedQuery.toLowerCase();
-    return products.filter(
+    return allProducts.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        p.brand.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q))
+        p.brand?.name?.toLowerCase().includes(q) ||
+        p.category?.name?.toLowerCase().includes(q) ||
+        p.tags?.some((t) => t.name?.toLowerCase().includes(q))
     );
-  }, [debouncedQuery]);
+  }, [debouncedQuery, allProducts]);
 
   const handleSearch = useCallback((text: string) => {
     setQuery(text);
@@ -58,40 +61,8 @@ export default function SearchScreen() {
   }, []);
 
   const renderProduct = useCallback(
-    ({ item }: { item: Product }) => (
-      <Link href={`/product/${item.id}`} asChild>
-        <TouchableOpacity style={StyleSheet.flatten([styles.productCard, { backgroundColor: colors.surface }])}>
-          <Image
-            source={item.image}
-            style={styles.productImage}
-            contentFit="cover"
-            transition={200}
-          />
-          <View style={styles.productInfo}>
-            <Text style={[styles.productBrand, { color: colors.textSecondary }]}>
-              {item.brand}
-            </Text>
-            <Text
-              style={[styles.productName, { color: colors.textPrimary }]}
-              numberOfLines={2}
-            >
-              {item.name}
-            </Text>
-            <View style={styles.priceRow}>
-              <Text style={[styles.price, { color: colors.textPrimary }]}>
-                {item.currency} {item.salePrice ?? item.price}
-              </Text>
-              {item.salePrice && (
-                <Text style={[styles.originalPrice, { color: colors.textSecondary }]}>
-                  {item.currency} {item.price}
-                </Text>
-              )}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Link>
-    ),
-    [colors]
+    ({ item }: { item: ApiProduct }) => <ProductCard product={item} showWishlist={false} />,
+    []
   );
 
   const renderChip = useCallback(
@@ -139,7 +110,11 @@ export default function SearchScreen() {
         )}
       </View>
 
-      {showSuggestions ? (
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      ) : showSuggestions ? (
         <FlatList
           key="suggestions"
           data={[1]}
@@ -224,6 +199,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     paddingVertical: spacing.xs,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   suggestionsContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
@@ -259,42 +239,6 @@ const styles = StyleSheet.create({
   productRow: {
     justifyContent: 'space-between',
     marginBottom: spacing.md,
-  },
-  productCard: {
-    width: '48%',
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  productImage: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-  },
-  productInfo: {
-    padding: spacing.md,
-  },
-  productBrand: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: spacing.xxs,
-  },
-  productName: {
-    ...typography.bodyStrong,
-    marginBottom: spacing.xs,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  price: {
-    ...typography.priceSmall,
-  },
-  originalPrice: {
-    ...typography.caption,
-    textDecorationLine: 'line-through',
   },
   emptyState: {
     alignItems: 'center',

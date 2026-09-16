@@ -52,7 +52,7 @@ export default function WishlistScreen() {
         columnWrapperStyle={styles.productGrid}
         contentContainerStyle={styles.scrollContent}
         renderItem={({ item }) => (
-          <Link href={`/product/${item.id}`} asChild>
+          <Link href={`/product/${item.slug}`} asChild>
             <Pressable style={StyleSheet.flatten([styles.productCard, { backgroundColor: colors.surface }])}>
               <Image source={item.image} style={styles.productImage} contentFit="contain" />
               <View style={styles.productInfo}>

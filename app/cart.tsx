@@ -69,7 +69,7 @@ export default function CartScreen() {
                 key={item.product.id}
                 style={[styles.cartItem, { borderBottomColor: colors.borderSubtle }]}
               >
-                <Link href={`/product/${item.product.id}`} asChild>
+                <Link href={`/product/${item.product.slug}`} asChild>
                   <TouchableOpacity style={styles.cartItemLeft}>
                     <Image
                       source={item.product.image}

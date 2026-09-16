@@ -10,8 +10,9 @@ import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { spacing, radius, typography, shadows } from '../../src/design-system';
 import { heroBanners } from '../../src/data/banners';
-import { categories } from '../../src/data/categories';
-import { products } from '../../src/data/products';
+import { useCategories } from '../../src/services/category/hooks';
+import { useFeaturedProducts, useBestSellers, useActiveProducts } from '../../src/services/product/hooks';
+import ProductCard from '../../src/components/ProductCard/Card';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -22,6 +23,11 @@ export default function HomeScreen() {
   const bannerRef = useRef<FlatList>(null);
   const cartCount = getCartItemCount();
   const wishlistCount = favoriteProducts.length;
+
+  const { data: categories } = useCategories();
+  const { data: featuredProducts } = useFeaturedProducts();
+  const { data: bestSellers } = useBestSellers();
+  const { data: newArrivals } = useActiveProducts();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -34,9 +40,9 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const featuredProducts = products.filter((p) => p.isFeatured);
-  const bestSellers = products.filter((p) => p.isBestSeller);
-  const newArrivals = products.filter((p) => p.isNew);
+  const featuredProductsList = featuredProducts ?? [];
+  const bestSellersList = bestSellers ?? [];
+  const newArrivalsList = newArrivals ?? [];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -127,10 +133,13 @@ export default function HomeScreen() {
             renderItem={({ item }) => (
               <Link href={`/category/${item.slug}`} asChild>
                 <Pressable style={styles.categoryCard}>
-                  <Image source={item.image} style={styles.categoryImage} contentFit="cover" />
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.categoryImage} contentFit="cover" />
+                  ) : (
+                    <View style={[styles.categoryImage, { backgroundColor: colors.surfaceMuted }]} />
+                  )}
                   <View style={[styles.categoryOverlay, { backgroundColor: colors.overlayMedium }]}>
                     <Text style={styles.categoryName}>{item.name}</Text>
-                    <Text style={styles.categoryCount}>{item.productCount} products</Text>
                   </View>
                 </Pressable>
               </Link>
@@ -140,153 +149,37 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Featured Collection</Text>
-            <Link href="/(tabs)/explore" asChild>
-              <Pressable>
-                <Text style={[styles.seeAll, { color: colors.accent }]}>See All</Text>
-              </Pressable>
-            </Link>
-          </View>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Featured Collection</Text>
           <FlatList
-            data={featuredProducts}
+            data={featuredProductsList}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.productList}
-            renderItem={({ item }) => (
-              <Link href={`/product/${item.id}`} asChild>
-                <Pressable style={StyleSheet.flatten([styles.productCard, { backgroundColor: colors.surface }])}>
-                  <Image source={item.image} style={styles.productImage} contentFit="contain" />
-                  <View style={styles.productInfo}>
-                    <Text style={[styles.productBrand, { color: colors.textSecondary }]}>{item.brand}</Text>
-                    <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <View style={styles.priceRow}>
-                      {item.salePrice ? (
-                        <>
-                          <Text style={[styles.salePrice, { color: colors.danger }]}>
-                            {item.currency} {item.salePrice.toLocaleString()}
-                          </Text>
-                          <Text style={[styles.originalPrice, { color: colors.textMuted }]}>
-                            {item.currency} {item.price.toLocaleString()}
-                          </Text>
-                        </>
-                      ) : (
-                        <Text style={[styles.price, { color: colors.textPrimary }]}>
-                          {item.currency} {item.price.toLocaleString()}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                  <Pressable style={styles.heartIcon}>
-                    <Ionicons name="heart-outline" size={18} color={colors.textSecondary} />
-                  </Pressable>
-                </Pressable>
-              </Link>
-            )}
+            renderItem={({ item }) => <ProductCard product={item} width={180} showWishlist={false} />}
             keyExtractor={(item) => item.id}
           />
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Best Sellers</Text>
-            <Link href="/(tabs)/explore" asChild>
-              <Pressable>
-                <Text style={[styles.seeAll, { color: colors.accent }]}>See All</Text>
-              </Pressable>
-            </Link>
-          </View>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Best Sellers</Text>
           <FlatList
-            data={bestSellers}
-            numColumns={2}
-            scrollEnabled={false}
-            columnWrapperStyle={styles.productGrid}
-            contentContainerStyle={styles.gridContent}
-            renderItem={({ item }) => (
-              <Link href={`/product/${item.id}`} asChild>
-                <Pressable style={StyleSheet.flatten([styles.gridCard, { backgroundColor: colors.surface }])}>
-                  <Image source={item.image} style={styles.gridCardImage} contentFit="contain" />
-                  <View style={styles.gridCardInfo}>
-                    <Text style={[styles.productBrand, { color: colors.textSecondary }]}>{item.brand}</Text>
-                    <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <View style={styles.priceRow}>
-                      {item.salePrice ? (
-                        <>
-                          <Text style={[styles.salePrice, { color: colors.danger }]}>
-                            {item.currency} {item.salePrice.toLocaleString()}
-                          </Text>
-                          <Text style={[styles.originalPrice, { color: colors.textMuted }]}>
-                            {item.currency} {item.price.toLocaleString()}
-                          </Text>
-                        </>
-                      ) : (
-                        <Text style={[styles.price, { color: colors.textPrimary }]}>
-                          {item.currency} {item.price.toLocaleString()}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                  <Pressable style={styles.gridHeartIcon}>
-                    <Ionicons name="heart-outline" size={18} color={colors.textSecondary} />
-                  </Pressable>
-                </Pressable>
-              </Link>
-            )}
+            data={bestSellersList}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productList}
+            renderItem={({ item }) => <ProductCard product={item} width={180} showWishlist={false} />}
             keyExtractor={(item) => item.id}
           />
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>New Arrivals</Text>
-            <Link href="/(tabs)/explore" asChild>
-              <Pressable>
-                <Text style={[styles.seeAll, { color: colors.accent }]}>See All</Text>
-              </Pressable>
-            </Link>
-          </View>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>New Arrivals</Text>
           <FlatList
-            data={newArrivals}
-            numColumns={2}
-            scrollEnabled={false}
-            columnWrapperStyle={styles.productGrid}
-            contentContainerStyle={styles.gridContent}
-            renderItem={({ item }) => (
-              <Link href={`/product/${item.id}`} asChild>
-                <Pressable style={StyleSheet.flatten([styles.gridCard, { backgroundColor: colors.surface }])}>
-                  <Image source={item.image} style={styles.gridCardImage} contentFit="contain" />
-                  <View style={styles.gridCardInfo}>
-                    <Text style={[styles.productBrand, { color: colors.textSecondary }]}>{item.brand}</Text>
-                    <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <View style={styles.priceRow}>
-                      {item.salePrice ? (
-                        <>
-                          <Text style={[styles.salePrice, { color: colors.danger }]}>
-                            {item.currency} {item.salePrice.toLocaleString()}
-                          </Text>
-                          <Text style={[styles.originalPrice, { color: colors.textMuted }]}>
-                            {item.currency} {item.price.toLocaleString()}
-                          </Text>
-                        </>
-                      ) : (
-                        <Text style={[styles.price, { color: colors.textPrimary }]}>
-                          {item.currency} {item.price.toLocaleString()}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                  <Pressable style={styles.gridHeartIcon}>
-                    <Ionicons name="heart-outline" size={18} color={colors.textSecondary} />
-                  </Pressable>
-                </Pressable>
-              </Link>
-            )}
+            data={newArrivalsList}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productList}
+            renderItem={({ item }) => <ProductCard product={item} width={180} showWishlist={false} />}
             keyExtractor={(item) => item.id}
           />
         </View>
@@ -440,85 +333,6 @@ const styles = StyleSheet.create({
   productList: {
     gap: spacing.md,
     paddingVertical: spacing.xs,
-  },
-  productCard: {
-    width: 180,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  productImage: {
-    width: '100%',
-    height: 180,
-  },
-  productInfo: {
-    padding: spacing.md,
-  },
-  productBrand: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: spacing.xxs,
-  },
-  productName: {
-    ...typography.bodyStrong,
-    marginBottom: spacing.xs,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  price: {
-    ...typography.priceSmall,
-  },
-  salePrice: {
-    ...typography.priceSmall,
-  },
-  originalPrice: {
-    ...typography.caption,
-    textDecorationLine: 'line-through',
-  },
-  heartIcon: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  productGrid: {
-    gap: spacing.md,
-  },
-  gridContent: {
-    gap: spacing.md,
-  },
-  gridCard: {
-    flex: 1,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  gridCardImage: {
-    width: '100%',
-    height: 160,
-  },
-  gridCardInfo: {
-    padding: spacing.md,
-  },
-  gridHeartIcon: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   bottomSpacer: {
     height: spacing.xl,
