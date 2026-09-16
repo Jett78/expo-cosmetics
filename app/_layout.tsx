@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CommerceProvider } from '../src/context/CommerceContext';
 import { lightColors } from '../src/design-system';
+import QueryProvider from '../src/providers/QueryProvider';
 import { useMemo } from 'react';
 
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
@@ -43,17 +44,19 @@ function AppThemeProvider({ children }: { children: React.ReactNode }) {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <CommerceProvider>
-        <AppThemeProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: lightColors.background },
-            }}
-          />
-          <StatusBar style="auto" />
-        </AppThemeProvider>
-      </CommerceProvider>
+      <QueryProvider>
+        <CommerceProvider>
+          <AppThemeProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: lightColors.background },
+              }}
+            />
+            <StatusBar style="auto" />
+          </AppThemeProvider>
+        </CommerceProvider>
+      </QueryProvider>
     </SafeAreaProvider>
   );
 }

@@ -15,6 +15,7 @@ export type Size = {
 export type Product = {
   id: string;
   name: string;
+  slug: string;
   brand: string;
   brandId: string;
   category: string;
@@ -41,6 +42,7 @@ export const products: Product[] = [
   {
     id: 'velvet-matte-lipstick',
     name: 'Velvet Matte Lipstick',
+    slug: 'velvet-matte-lipstick',
     brand: 'Luxe Beauty',
     brandId: 'luxe-beauty',
     category: 'Lips',
@@ -70,6 +72,7 @@ export const products: Product[] = [
   {
     id: 'radiant-glow-foundation',
     name: 'Radiant Glow Foundation',
+    slug: 'radiant-glow-foundation',
     brand: 'Luxe Beauty',
     brandId: 'luxe-beauty',
     category: 'Face',
@@ -95,6 +98,7 @@ export const products: Product[] = [
   {
     id: 'sky-high-mascara',
     name: 'Sky High Mascara',
+    slug: 'sky-high-mascara',
     brand: 'Velvet Glow',
     brandId: 'velvet-glow',
     category: 'Eyes',
@@ -115,6 +119,7 @@ export const products: Product[] = [
   {
     id: 'hydra-glow-serum',
     name: 'Hydra Glow Serum',
+    slug: 'hydra-glow-serum',
     brand: 'PureSkin',
     brandId: 'pureskin',
     category: 'Skincare',
@@ -136,6 +141,7 @@ export const products: Product[] = [
   {
     id: 'noir-eau-de-parfum',
     name: 'Noir Eau de Parfum',
+    slug: 'noir-eau-de-parfum',
     brand: 'Noir',
     brandId: 'noir',
     category: 'Fragrance',
@@ -161,6 +167,7 @@ export const products: Product[] = [
   {
     id: 'rose-mist-toner',
     name: 'Rose Mist Toner',
+    slug: 'rose-mist-toner',
     brand: 'Bloom',
     brandId: 'bloom',
     category: 'Skincare',
@@ -180,6 +187,7 @@ export const products: Product[] = [
   {
     id: 'silk-eyeshadow-palette',
     name: 'Silk Eyeshadow Palette',
+    slug: 'silk-eyeshadow-palette',
     brand: 'Velvet Glow',
     brandId: 'velvet-glow',
     category: 'Eyes',
@@ -201,6 +209,7 @@ export const products: Product[] = [
   {
     id: 'vitamin-c-moisturizer',
     name: 'Vitamin C Moisturizer',
+    slug: 'vitamin-c-moisturizer',
     brand: 'PureSkin',
     brandId: 'pureskin',
     category: 'Skincare',
@@ -220,6 +229,7 @@ export const products: Product[] = [
   {
     id: 'precision-liner',
     name: 'Precision Liquid Liner',
+    slug: 'precision-liner',
     brand: 'Luxe Beauty',
     brandId: 'luxe-beauty',
     category: 'Eyes',
@@ -240,6 +250,7 @@ export const products: Product[] = [
   {
     id: 'body-butter-shea',
     name: 'Shea Body Butter',
+    slug: 'body-butter-shea',
     brand: 'Crystal',
     brandId: 'crystal',
     category: 'Body Care',
@@ -260,6 +271,7 @@ export const products: Product[] = [
   {
     id: 'blush-serum',
     name: 'Cheek Glow Blush',
+    slug: 'blush-serum',
     brand: 'Bloom',
     brandId: 'bloom',
     category: 'Face',
@@ -285,6 +297,7 @@ export const products: Product[] = [
   {
     id: 'gold-shimmer-highlighter',
     name: 'Gold Shimmer Highlighter',
+    slug: 'gold-shimmer-highlighter',
     brand: 'Velvet Glow',
     brandId: 'velvet-glow',
     category: 'Face',
