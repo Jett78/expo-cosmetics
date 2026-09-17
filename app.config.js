@@ -2,23 +2,23 @@ const IS_DEV_CLIENT = process.env.EXPO_PUBLIC_USE_DEV_CLIENT !== 'false';
 
 module.exports = {
   expo: {
-    name: process.env.EXPO_PUBLIC_APP_NAME ?? 'Glow',
-    slug: process.env.EXPO_PUBLIC_APP_SLUG ?? 'glow-cosmetics',
+    name: process.env.EXPO_PUBLIC_APP_NAME ?? 'La Cosmetics',
+    slug: process.env.EXPO_PUBLIC_APP_SLUG ?? 'la-cosmetics',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
-    scheme: 'glow-cosmetics',
+    scheme: 'la-cosmetics',
     splash: {
-      image: './assets/splash.png',
+      image: './assets/la-cos.png',
       resizeMode: 'contain',
       backgroundColor: '#FDF8F6',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.glow.cosmetics',
+      bundleIdentifier: 'com.la.cosmetics',
       infoPlist: {
         NSCameraUsageDescription: 'Camera access is used for visual product search.',
         NSPhotoLibraryUsageDescription: 'Photo library access is used for visual product search.',

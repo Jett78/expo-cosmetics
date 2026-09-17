@@ -5,10 +5,17 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useEffect } from "react";
 import { Text } from "@rneui/themed";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 
 import { useAppTheme } from "../../src/hooks/useAppTheme";
 import { useCommerce } from "../../src/context/CommerceContext";
@@ -37,6 +44,16 @@ export default function HomeScreen() {
   const cartCount = getCartItemCount();
   const wishlistCount = favoriteProducts.length;
 
+  const fadeIn = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+  }));
+
+  useEffect(() => {
+    fadeIn.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
+  }, []);
+
   const { data: categories } = useCategories();
   const { data: featuredProducts } = useFeaturedProducts();
   const { data: bestSellers } = useBestSellers();
@@ -55,7 +72,7 @@ export default function HomeScreen() {
   const newArrivalsList = newArrivals ?? [];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, animatedStyle]}>
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <Image
           source={require("../../assets/la-cos.png")}
@@ -276,7 +293,7 @@ export default function HomeScreen() {
         <TestimonialSlider testimonials={testimonials ?? []} />
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

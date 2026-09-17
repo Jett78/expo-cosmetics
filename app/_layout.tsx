@@ -10,12 +10,11 @@ import { Manrope_500Medium } from '@expo-google-fonts/manrope/500Medium';
 import { Manrope_600SemiBold } from '@expo-google-fonts/manrope/600SemiBold';
 import { Manrope_700Bold } from '@expo-google-fonts/manrope/700Bold';
 import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope/800ExtraBold';
-import * as SplashScreen from 'expo-splash-screen';
 
 import { CommerceProvider } from '../src/context/CommerceContext';
 import { lightColors } from '../src/design-system';
 import QueryProvider from '../src/providers/QueryProvider';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = 'light' as const;
@@ -60,12 +59,6 @@ export default function RootLayout() {
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
-
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
 
   if (!fontsLoaded) {
     return null;
