@@ -38,38 +38,38 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.header, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.brandName, { color: colors.textPrimary }]}>GLOW</Text>
-          <View style={styles.headerIcons}>
-            <Link href="/(tabs)/search" asChild>
-              <Pressable hitSlop={12}>
-                <Ionicons name="search-outline" size={24} color={colors.textPrimary} />
-              </Pressable>
-            </Link>
-            <Link href="/(tabs)/wishlist" asChild>
-              <Pressable hitSlop={12} style={styles.headerIconRight}>
-                <Ionicons name="heart-outline" size={24} color={colors.textPrimary} />
-                {wishlistCount > 0 && (
-                  <View style={[styles.badge, { backgroundColor: colors.danger }]}>
-                    <Text style={styles.badgeText}>{wishlistCount}</Text>
-                  </View>
-                )}
-              </Pressable>
-            </Link>
-            <Link href="/cart" asChild>
-              <Pressable hitSlop={12} style={styles.headerIconRight}>
-                <Ionicons name="cart-outline" size={24} color={colors.textPrimary} />
-                {cartCount > 0 && (
-                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                    <Text style={styles.badgeText}>{cartCount}</Text>
-                  </View>
-                )}
-              </Pressable>
-            </Link>
-          </View>
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <Image source={require('../../assets/la-cos.png')} style={styles.logo} contentFit="contain" />
+        <View style={styles.headerIcons}>
+          <Link href="/(tabs)/search" asChild>
+            <Pressable hitSlop={12} style={StyleSheet.flatten([styles.iconBtn, { backgroundColor: colors.surfaceMuted }])}>
+              <Ionicons name="search-outline" size={20} color={colors.textPrimary} />
+            </Pressable>
+          </Link>
+          <Link href="/(tabs)/wishlist" asChild>
+            <Pressable hitSlop={12} style={StyleSheet.flatten([styles.iconBtn, { backgroundColor: colors.surfaceMuted }])}>
+              <Ionicons name="heart-outline" size={20} color={colors.textPrimary} />
+              {wishlistCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.danger }]}>
+                  <Text style={styles.badgeText}>{wishlistCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </Link>
+          <Link href="/cart" asChild>
+            <Pressable hitSlop={12} style={StyleSheet.flatten([styles.iconBtn, { backgroundColor: colors.surfaceMuted }])}>
+              <Ionicons name="cart-outline" size={20} color={colors.textPrimary} />
+              {cartCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </Link>
         </View>
+      </View>
 
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.section, { marginBottom: spacing.lg }]}>
           <FlatList
             data={categories}
@@ -174,26 +174,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing['5xl'],
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
   },
-  brandName: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 2,
+  logo: {
+    width: 40,
+    height: 40,
   },
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    gap: spacing.sm,
   },
-  headerIconRight: {
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     position: 'relative',
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -6,
+    top: 2,
+    right: 2,
     minWidth: 16,
     height: 16,
     borderRadius: 8,

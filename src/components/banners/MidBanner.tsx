@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 20,
-    backgroundColor: '#C4876E',
+    backgroundColor: '#F84EA0',
   },
 });
