@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { useCommerce } from '../../context/CommerceContext';
-import { spacing, radius, typography, shadows } from '../../design-system';
+import { spacing, radius, typography } from '../../design-system';
 import type { ApiProduct, ApiAttribute, ApiStockAndPrice } from '../../types';
 
 type ProductCardProps = {
@@ -120,8 +120,7 @@ export default function ProductCard({ product, width, showWishlist = true, showC
       onPress={handlePress}
       style={[
         styles.card,
-        { backgroundColor: colors.surface, width: width },
-        shadows.sm,
+        { backgroundColor: '#FFFFFF', width: width },
       ]}
     >
       {/* Image Area */}
@@ -174,38 +173,21 @@ export default function ProductCard({ product, width, showWishlist = true, showC
 
       {/* Info Area */}
       <View style={styles.info}>
-        {showCategory && product.category?.name && (
-          <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-            {product.category.name}
-          </Text>
-        )}
-
         {product.brand?.name && (
-          <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 }]} numberOfLines={1}>
+          <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }]} numberOfLines={1}>
             {product.brand.name}
           </Text>
         )}
 
-        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>
+        <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '700', lineHeight: 18 }]} numberOfLines={2}>
           {product.name}
         </Text>
-
-        {/* Rating */}
-        <View style={styles.ratingRow}>
-          <Ionicons name="star" size={12} color="#E8A952" />
-          <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 2 }]}>
-            {product.avgRating}
-          </Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginLeft: 2 }]}>
-            ({product.reviews.length})
-          </Text>
-        </View>
 
         {/* Price */}
         <View style={styles.priceRow}>
           {hasDiscount ? (
             <>
-              <Text style={[typography.priceSmall, { color: colors.textPrimary }]}>
+              <Text style={[typography.priceSmall, { color: colors.danger, fontWeight: '700' }]}>
                 Rs. {displayPrice.toLocaleString()}
               </Text>
               <Text
@@ -218,7 +200,7 @@ export default function ProductCard({ product, width, showWishlist = true, showC
               </Text>
             </>
           ) : (
-            <Text style={[typography.priceSmall, { color: colors.textPrimary }]}>
+            <Text style={[typography.priceSmall, { color: colors.textPrimary, fontWeight: '800' }]}>
               Rs. {displayPrice.toLocaleString()}
             </Text>
           )}
@@ -236,8 +218,8 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    aspectRatio: 1,
-    backgroundColor: '#F8F5F3',
+    aspectRatio: 4 / 5,
+    backgroundColor: '#ffffff',
   },
   image: {
     width: '100%',
@@ -277,12 +259,7 @@ const styles = StyleSheet.create({
   },
   info: {
     padding: spacing.md,
-    gap: 2,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xxs,
+    gap: 3,
   },
   priceRow: {
     flexDirection: 'row',

@@ -97,40 +97,61 @@ export default function HomeScreen() {
        
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Featured Collection</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Featured Collection</Text>
+            <Link href="/(tabs)/explore" asChild>
+              <Pressable>
+                <Text style={[styles.viewAll, { color: colors.accent }]}>View All</Text>
+              </Pressable>
+            </Link>
+          </View>
           <FlatList
             data={featuredProductsList}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.productList}
-            renderItem={({ item }) => <ProductCard product={item} width={180} showWishlist={false} />}
+            renderItem={({ item }) => <ProductCard product={item} width={155} />}
             keyExtractor={(item) => item.id}
           />
         </View>
-          <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Best Sellers</Text>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Best Sellers</Text>
+            <Link href="/(tabs)/explore" asChild>
+              <Pressable>
+                <Text style={[styles.viewAll, { color: colors.accent }]}>View All</Text>
+              </Pressable>
+            </Link>
+          </View>
           <FlatList
             data={bestSellersList}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.productList}
-            renderItem={({ item }) => <ProductCard product={item} width={180} showWishlist={false} />}
+            renderItem={({ item }) => <ProductCard product={item} width={155} />}
             keyExtractor={(item) => item.id}
           />
         </View>
- <BrandSection brands={brands ?? []} />
+
+        <BrandSection brands={brands ?? []} />
         <MidBanner banners={midBanners} />
 
-      
-
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>New Arrivals</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>New Arrivals</Text>
+            <Link href="/(tabs)/explore" asChild>
+              <Pressable>
+                <Text style={[styles.viewAll, { color: colors.accent }]}>View All</Text>
+              </Pressable>
+            </Link>
+          </View>
           <FlatList
             data={newArrivalsList}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.productList}
-            renderItem={({ item }) => <ProductCard product={item} width={180} showWishlist={false} />}
+            renderItem={({ item }) => <ProductCard product={item} width={155} />}
             keyExtractor={(item) => item.id}
           />
         </View>
@@ -192,7 +213,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.h3,
     fontWeight: '800',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  viewAll: {
+    ...typography.bodyStrong,
+    fontWeight: '600',
   },
   categoryList: {
     gap: spacing.md,
