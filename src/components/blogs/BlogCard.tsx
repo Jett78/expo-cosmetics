@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Image } from 'expo-image';
+import { Link } from 'expo-router';
 
 import { spacing, radius, typography } from '../../design-system';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -18,8 +19,11 @@ export default function BlogCard({ blog }: BlogCardProps) {
   const { colors } = useAppTheme();
   const cleanDescription = stripHtml(blog.description);
 
+  const cardStyle = StyleSheet.flatten([styles.card, { backgroundColor: colors.surface }]);
+
   return (
-    <Pressable style={[styles.card, { backgroundColor: colors.surface }]}>
+    <Link href={`/blog/${blog.slug}`} asChild>
+      <Pressable style={cardStyle}>
       <Image
         source={{ uri: blog.imageLink.original }}
         style={styles.image}
@@ -39,6 +43,7 @@ export default function BlogCard({ blog }: BlogCardProps) {
         </Text>
       </View>
     </Pressable>
+    </Link>
   );
 }
 

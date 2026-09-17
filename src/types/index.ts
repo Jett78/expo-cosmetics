@@ -21,4 +21,4 @@ export type {
   ProductBySlugApiResponse,
 } from './product';
 export type { ApiTestimonial, TestimonialsApiResponse } from './testimonial';
-export type { ApiBlog, BlogsApiResponse } from './blog';
+export type { ApiBlog, BlogsApiResponse, BlogBySlugApiResponse } from './blog';
