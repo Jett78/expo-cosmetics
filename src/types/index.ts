@@ -20,3 +20,5 @@ export type {
   BestSellerApiResponse,
   ProductBySlugApiResponse,
 } from './product';
+export type { ApiTestimonial, TestimonialsApiResponse } from './testimonial';
+export type { ApiBlog, BlogsApiResponse } from './blog';
