@@ -112,23 +112,33 @@ export const radius = {
   pill: 999,
 };
 
+const manrope = {
+  extraLight: 'Manrope_200ExtraLight',
+  light: 'Manrope_300Light',
+  regular: 'Manrope_400Regular',
+  medium: 'Manrope_500Medium',
+  semiBold: 'Manrope_600SemiBold',
+  bold: 'Manrope_700Bold',
+  extraBold: 'Manrope_800ExtraBold',
+} as const;
+
 export const typography = {
-  display: { fontSize: 42, lineHeight: 46, fontWeight: '800' as const, letterSpacing: -0.5 },
-  h1: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, letterSpacing: -0.3 },
-  h2: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const, letterSpacing: -0.2 },
-  h3: { fontSize: 18, lineHeight: 24, fontWeight: '600' as const },
-  h4: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const },
-  body: { fontSize: 15, lineHeight: 22, fontWeight: '400' as const },
-  bodyStrong: { fontSize: 15, lineHeight: 22, fontWeight: '600' as const },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' as const },
-  captionLarge: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const },
-  button: { fontSize: 14, lineHeight: 18, fontWeight: '700' as const, letterSpacing: 0.5 },
-  price: { fontSize: 18, lineHeight: 24, fontWeight: '700' as const },
-  priceLarge: { fontSize: 24, lineHeight: 30, fontWeight: '700' as const },
-  priceSmall: { fontSize: 14, lineHeight: 18, fontWeight: '600' as const },
-  label: { fontSize: 11, lineHeight: 14, fontWeight: '600' as const, letterSpacing: 0.8 },
-  title: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const },
-  titleLarge: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, letterSpacing: -0.3 },
+  display: { fontSize: 42, lineHeight: 46, fontWeight: '800' as const, letterSpacing: -0.5, fontFamily: manrope.extraBold },
+  h1: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, letterSpacing: -0.3, fontFamily: manrope.bold },
+  h2: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const, letterSpacing: -0.2, fontFamily: manrope.bold },
+  h3: { fontSize: 18, lineHeight: 24, fontWeight: '600' as const, fontFamily: manrope.semiBold },
+  h4: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const, fontFamily: manrope.semiBold },
+  body: { fontSize: 15, lineHeight: 22, fontWeight: '400' as const, fontFamily: manrope.regular },
+  bodyStrong: { fontSize: 15, lineHeight: 22, fontWeight: '600' as const, fontFamily: manrope.semiBold },
+  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' as const, fontFamily: manrope.medium },
+  captionLarge: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const, fontFamily: manrope.medium },
+  button: { fontSize: 14, lineHeight: 18, fontWeight: '700' as const, letterSpacing: 0.5, fontFamily: manrope.bold },
+  price: { fontSize: 18, lineHeight: 24, fontWeight: '700' as const, fontFamily: manrope.bold },
+  priceLarge: { fontSize: 24, lineHeight: 30, fontWeight: '700' as const, fontFamily: manrope.bold },
+  priceSmall: { fontSize: 14, lineHeight: 18, fontWeight: '600' as const, fontFamily: manrope.semiBold },
+  label: { fontSize: 11, lineHeight: 14, fontWeight: '600' as const, letterSpacing: 0.8, fontFamily: manrope.semiBold },
+  title: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const, fontFamily: manrope.bold },
+  titleLarge: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const, letterSpacing: -0.3, fontFamily: manrope.bold },
 };
 
 export const motion = {

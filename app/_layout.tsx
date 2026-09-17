@@ -2,11 +2,20 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider } from '@rneui/themed';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from '@expo-google-fonts/manrope/useFonts';
+import { Manrope_200ExtraLight } from '@expo-google-fonts/manrope/200ExtraLight';
+import { Manrope_300Light } from '@expo-google-fonts/manrope/300Light';
+import { Manrope_400Regular } from '@expo-google-fonts/manrope/400Regular';
+import { Manrope_500Medium } from '@expo-google-fonts/manrope/500Medium';
+import { Manrope_600SemiBold } from '@expo-google-fonts/manrope/600SemiBold';
+import { Manrope_700Bold } from '@expo-google-fonts/manrope/700Bold';
+import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope/800ExtraBold';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { CommerceProvider } from '../src/context/CommerceContext';
 import { lightColors } from '../src/design-system';
 import QueryProvider from '../src/providers/QueryProvider';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = 'light' as const;
@@ -42,6 +51,26 @@ function AppThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Manrope_200ExtraLight,
+    Manrope_300Light,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <SafeAreaProvider>
       <QueryProvider>
