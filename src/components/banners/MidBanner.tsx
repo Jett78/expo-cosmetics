@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
+import { ImageBackground } from 'expo-image';
 import { useRouter } from 'expo-router';
 
 import { spacing, radius } from '../../design-system';
@@ -9,8 +9,7 @@ import { resolveBannerLink } from '../../utils/resolveBannerLink';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GAP = 12;
-const CONTAINER_MARGIN = 16;
-const ITEM_WIDTH = SCREEN_WIDTH - CONTAINER_MARGIN * 2 - GAP;
+const ITEM_WIDTH = SCREEN_WIDTH - 32 - GAP;
 
 type MidBannerProps = {
   banners: ApiBanner[];
@@ -55,10 +54,11 @@ export default function MidBanner({ banners }: MidBannerProps) {
               onPress={() => router.push({ pathname: route, params })}
               style={{ marginRight: GAP }}
             >
-              <Image
+              <ImageBackground
                 source={{ uri: item.imageLink.original }}
-                style={[styles.image, { width: ITEM_WIDTH }]}
-                contentFit="cover"
+                style={[styles.bannerImage, { width: ITEM_WIDTH }]}
+                contentFit="fill"
+                imageStyle={styles.bannerImageRadius}
               />
             </Pressable>
           );
@@ -82,11 +82,15 @@ export default function MidBanner({ banners }: MidBannerProps) {
 const styles = StyleSheet.create({
   container: {
     marginTop: spacing['2xl'],
+    marginHorizontal: spacing.xl,
   },
-  image: {
-    height: 160,
+  bannerImage: {
+    height: 180,
     borderRadius: radius.lg,
     overflow: 'hidden',
+  },
+  bannerImageRadius: {
+    borderRadius: radius.lg,
   },
   dots: {
     flexDirection: 'row',
