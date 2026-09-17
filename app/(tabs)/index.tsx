@@ -70,10 +70,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <HeroBanner banners={heroBanners} />
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Shop by Category</Text>
+        <View style={[styles.section, { marginBottom: spacing.lg }]}>
           <FlatList
             data={categories}
             horizontal
@@ -87,9 +84,7 @@ export default function HomeScreen() {
                   ) : (
                     <View style={[styles.categoryImage, { backgroundColor: colors.surfaceMuted }]} />
                   )}
-                  <View style={[styles.categoryOverlay, { backgroundColor: colors.overlayMedium }]}>
-                    <Text style={styles.categoryName}>{item.name}</Text>
-                  </View>
+                  <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={2}>{item.name}</Text>
                 </Pressable>
               </Link>
             )}
@@ -97,7 +92,9 @@ export default function HomeScreen() {
           />
         </View>
 
-        <BrandSection brands={brands ?? []} />
+        <HeroBanner banners={heroBanners} />
+
+       
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Featured Collection</Text>
@@ -110,10 +107,7 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
           />
         </View>
-
-        <MidBanner banners={midBanners} />
-
-        <View style={styles.section}>
+          <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Best Sellers</Text>
           <FlatList
             data={bestSellersList}
@@ -124,6 +118,10 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
           />
         </View>
+ <BrandSection brands={brands ?? []} />
+        <MidBanner banners={midBanners} />
+
+      
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>New Arrivals</Text>
@@ -193,30 +191,28 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
+    fontWeight: '800',
+    marginBottom: spacing.md,
   },
   categoryList: {
     gap: spacing.md,
     paddingVertical: spacing.xs,
   },
   categoryCard: {
-    width: 120,
-    height: 160,
+    width: 100,
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
   categoryImage: {
     width: '100%',
-    height: '100%',
-  },
-  categoryOverlay: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'flex-end',
-    padding: spacing.md,
+    height: 90,
+    borderRadius: radius.lg,
   },
   categoryName: {
-    ...typography.bodyStrong,
-    color: '#FFFFFF',
-    fontSize: 14,
+    ...typography.caption,
+    fontWeight: '800',
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
   productList: {
     gap: spacing.md,
