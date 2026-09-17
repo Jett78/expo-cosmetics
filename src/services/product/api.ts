@@ -8,6 +8,7 @@ export function searchProducts(
     page: params.page ?? 1,
     sortBy: params.sortBy ?? 'newest',
     categoryId: params.categoryId,
+    brandId: params.brandId,
   });
 }
 

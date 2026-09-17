@@ -2,11 +2,11 @@ import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Text } from '@rneui/themed';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 
 import { useMemo } from 'react';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
-import { spacing, radius, typography, shadows } from '../../src/design-system';
+import { spacing, radius, typography } from '../../src/design-system';
 import { useCategories } from '../../src/services/category/hooks';
 import { useProducts, useActiveProducts } from '../../src/services/product/hooks';
 import ProductCard from '../../src/components/ProductCard/Card';
@@ -17,8 +17,15 @@ function slugify(name: string): string {
 
 export default function ExploreScreen() {
   const { colors } = useAppTheme();
+  const params = useLocalSearchParams<{ brandId?: string }>();
+  const brandId = params.brandId;
+
   const { data: categories } = useCategories();
-  const { data: trendingData } = useProducts({ page: 1, sortBy: 'popular' });
+  const { data: trendingData } = useProducts({
+    page: 1,
+    sortBy: 'newest',
+    brandId: brandId || undefined,
+  });
   const { data: allProducts } = useActiveProducts();
 
   const trendingProducts = trendingData?.products ?? [];
@@ -37,10 +44,17 @@ export default function ExploreScreen() {
     return Array.from(brandMap.values());
   }, [allProducts]);
 
+  const filteredBrandName = useMemo(() => {
+    if (!brandId) return null;
+    return uniqueBrands.find((b) => b.id === brandId)?.name ?? null;
+  }, [brandId, uniqueBrands]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Explore</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          {filteredBrandName ?? 'Explore'}
+        </Text>
       </View>
 
       <Link href="/(tabs)/search" asChild>
@@ -59,48 +73,65 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <>
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Categories</Text>
-              <FlatList
-                data={categories}
-                numColumns={2}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.categoryGrid}
-                contentContainerStyle={styles.gridContent}
-                renderItem={({ item }) => (
-                  <Link href={`/category/${item.slug}`} asChild>
-                    <Pressable style={StyleSheet.flatten([styles.categoryCard, { backgroundColor: colors.surface }])}>
-                      {item.image ? (
-                        <Image source={{ uri: item.image }} style={styles.categoryImage} contentFit="cover" />
-                      ) : (
-                        <View style={[styles.categoryImage, { backgroundColor: colors.surfaceMuted }]} />
-                      )}
-                      <View style={[styles.categoryOverlay, { backgroundColor: colors.overlayStrong }]}>
-                        <Text style={styles.categoryName}>{item.name}</Text>
-                      </View>
-                    </Pressable>
-                  </Link>
-                )}
-                keyExtractor={(item) => item.id}
-              />
-            </View>
+            {!brandId && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Categories</Text>
+                <FlatList
+                  data={categories}
+                  numColumns={2}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.categoryGrid}
+                  contentContainerStyle={styles.gridContent}
+                  renderItem={({ item }) => (
+                    <Link href={`/category/${item.slug}`} asChild>
+                      <Pressable style={StyleSheet.flatten([styles.categoryCard, { backgroundColor: colors.surface }])}>
+                        {item.image ? (
+                          <Image source={{ uri: item.image }} style={styles.categoryImage} contentFit="cover" />
+                        ) : (
+                          <View style={[styles.categoryImage, { backgroundColor: colors.surfaceMuted }]} />
+                        )}
+                        <View style={[styles.categoryOverlay, { backgroundColor: colors.overlayStrong }]}>
+                          <Text style={styles.categoryName}>{item.name}</Text>
+                        </View>
+                      </Pressable>
+                    </Link>
+                  )}
+                  keyExtractor={(item) => item.id}
+                />
+              </View>
+            )}
 
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Brands</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.brandList}
-              >
-                {uniqueBrands.map((item) => (
-                  <Link key={item.id} href={`/brand/${slugify(item.name)}`} asChild>
-                    <Pressable style={StyleSheet.flatten([styles.brandCard, { backgroundColor: colors.surface, borderColor: colors.borderSubtle }])}>
-                      <Text style={[styles.brandName, { color: colors.textPrimary }]}>{item.name}</Text>
+            {!brandId && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Brands</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.brandList}
+                >
+                  {uniqueBrands.map((item) => (
+                    <Link key={item.id} href={`/(tabs)/explore?brandId=${item.id}`} asChild>
+                      <Pressable style={StyleSheet.flatten([styles.brandCard, { backgroundColor: colors.surface, borderColor: colors.borderSubtle }])}>
+                        <Text style={[styles.brandName, { color: colors.textPrimary }]}>{item.name}</Text>
+                      </Pressable>
+                    </Link>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {brandId && (
+              <View style={styles.section}>
+                <Pressable onPress={() => {}} style={styles.backBtn}>
+                  <Link href="/(tabs)/explore" asChild>
+                    <Pressable style={StyleSheet.flatten([styles.backBtnInner, { backgroundColor: colors.surfaceMuted }])}>
+                      <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
+                      <Text style={[styles.backText, { color: colors.textPrimary }]}>All Brands</Text>
                     </Pressable>
                   </Link>
-                ))}
-              </ScrollView>
-            </View>
+                </Pressable>
+              </View>
+            )}
           </>
         }
         data={trendingProducts}
@@ -110,7 +141,9 @@ export default function ExploreScreen() {
         ListFooterComponent={
           <View>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Trending Now</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                {brandId ? 'Products' : 'Trending Now'}
+              </Text>
             </View>
           </View>
         }
@@ -187,11 +220,6 @@ const styles = StyleSheet.create({
     ...typography.h4,
     color: '#FFFFFF',
   },
-  categoryCount: {
-    ...typography.caption,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: spacing.xxs,
-  },
   brandList: {
     gap: spacing.md,
     paddingVertical: spacing.xs,
@@ -208,8 +236,20 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     marginBottom: spacing.xxs,
   },
-  brandTagline: {
-    ...typography.caption,
+  backBtn: {
+    marginBottom: spacing.md,
+  },
+  backBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    gap: spacing.sm,
+  },
+  backText: {
+    ...typography.bodyStrong,
   },
   trendingHeader: {
     marginTop: spacing['2xl'],

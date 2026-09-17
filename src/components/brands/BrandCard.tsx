@@ -1,9 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from '@rneui/themed';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 
-import { spacing, radius, typography } from '../../design-system';
+import { spacing, radius } from '../../design-system';
 import type { ApiBrand } from '../../types/brand';
 
 type BrandCardProps = {
@@ -12,7 +11,7 @@ type BrandCardProps = {
 
 export default function BrandCard({ brand }: BrandCardProps) {
   return (
-    <Link href={`/brand/${brand.name.toLowerCase().replace(/\s+/g, '-')}`} asChild>
+    <Link href={`/(tabs)/explore?brandId=${brand.id}`} asChild>
       <Pressable style={styles.container}>
         <View style={styles.imageWrapper}>
           <Image
@@ -21,9 +20,6 @@ export default function BrandCard({ brand }: BrandCardProps) {
             contentFit="contain"
           />
         </View>
-        <Text style={styles.name} numberOfLines={1}>
-          {brand.name}
-        </Text>
       </Pressable>
     </Link>
   );
@@ -32,14 +28,13 @@ export default function BrandCard({ brand }: BrandCardProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    width: 80,
-    gap: spacing.sm,
+    width: '100%',
   },
   imageWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.full,
-    backgroundColor: '#F8F5F2',
+    width: '100%',
+    height: 80,
+    borderRadius: radius.md,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
     overflow: 'hidden',
@@ -47,12 +42,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: 48,
-    height: 48,
-  },
-  name: {
-    ...typography.caption,
-    fontSize: 12,
-    textAlign: 'center',
+    width: 56,
+    height: 56,
   },
 });
