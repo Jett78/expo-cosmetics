@@ -17,13 +17,14 @@ function slugify(name: string): string {
 
 export default function ExploreScreen() {
   const { colors } = useAppTheme();
-  const params = useLocalSearchParams<{ brandId?: string }>();
+  const params = useLocalSearchParams<{ brandId?: string; sortBy?: string }>();
   const brandId = params.brandId;
+  const sortBy = params.sortBy;
 
   const { data: categories } = useCategories();
   const { data: trendingData } = useProducts({
     page: 1,
-    sortBy: 'newest',
+    sortBy: sortBy || 'newest',
     brandId: brandId || undefined,
   });
   const { data: allProducts } = useActiveProducts();
@@ -53,7 +54,7 @@ export default function ExploreScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-          {filteredBrandName ?? 'Explore'}
+          {filteredBrandName ?? (sortBy === 'offer' ? 'Hot Deals' : 'Explore')}
         </Text>
       </View>
 
@@ -142,7 +143,7 @@ export default function ExploreScreen() {
           <View>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                {brandId ? 'Products' : 'Trending Now'}
+                {brandId ? 'Products' : sortBy === 'offer' ? 'Hot Deals' : 'Trending Now'}
               </Text>
             </View>
           </View>

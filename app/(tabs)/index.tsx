@@ -5,17 +5,10 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { useEffect } from "react";
 import { Text } from "@rneui/themed";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 
 import { useAppTheme } from "../../src/hooks/useAppTheme";
 import { useCommerce } from "../../src/context/CommerceContext";
@@ -25,6 +18,7 @@ import {
   useFeaturedProducts,
   useBestSellers,
   useActiveProducts,
+  useProducts,
 } from "../../src/services/product/hooks";
 import { useActiveBanners } from "../../src/services/banner/hooks";
 import { useBrands } from "../../src/services/brand/hooks";
@@ -37,6 +31,14 @@ import BottomBanner from "../../src/components/banners/BottomBanner";
 import BrandSection from "../../src/components/brands/BrandSection";
 import TestimonialSlider from "../../src/components/testimonials/TestimonialSlider";
 import BlogCard from "../../src/components/blogs/BlogCard";
+import {
+  ProductCardSkeleton,
+  CategorySkeleton,
+  BannerSkeleton,
+  BlogCardSkeleton,
+  BrandSkeleton,
+  Skeleton,
+} from "../../src/components/Skeleton";
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
@@ -44,24 +46,15 @@ export default function HomeScreen() {
   const cartCount = getCartItemCount();
   const wishlistCount = favoriteProducts.length;
 
-  const fadeIn = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: fadeIn.value,
-  }));
-
-  useEffect(() => {
-    fadeIn.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
-  }, []);
-
-  const { data: categories } = useCategories();
-  const { data: featuredProducts } = useFeaturedProducts();
-  const { data: bestSellers } = useBestSellers();
-  const { data: newArrivals } = useActiveProducts();
-  const { data: allBanners } = useActiveBanners(10);
-  const { data: brands } = useBrands();
-  const { data: testimonials } = useTestimonials(10);
-  const { data: blogs } = useBlogs(10);
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: featuredProducts, isLoading: featuredLoading } = useFeaturedProducts();
+  const { data: bestSellers, isLoading: bestSellersLoading } = useBestSellers();
+  const { data: newArrivals, isLoading: newArrivalsLoading } = useActiveProducts();
+  const { data: allBanners, isLoading: bannersLoading } = useActiveBanners(10);
+  const { data: brands, isLoading: brandsLoading } = useBrands();
+  const { data: testimonials, isLoading: testimonialsLoading } = useTestimonials(10);
+  const { data: blogs, isLoading: blogsLoading } = useBlogs(10);
+  const { data: hotDealsData, isLoading: hotDealsLoading } = useProducts({ page: 1, sortBy: "offer" });
 
   const heroBanners = (allBanners ?? []).filter((b) => b.type === "HERO");
   const midBanners = (allBanners ?? []).filter((b) => b.type === "MID");
@@ -70,9 +63,10 @@ export default function HomeScreen() {
   const featuredProductsList = featuredProducts ?? [];
   const bestSellersList = bestSellers ?? [];
   const newArrivalsList = newArrivals ?? [];
+  const hotDealsList = (hotDealsData?.products ?? []).slice(0, 10);
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor: colors.background }, animatedStyle]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <Image
           source={require("../../assets/la-cos.png")}
@@ -147,42 +141,59 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={[styles.section, { marginBottom: spacing.lg }]}>
-          <FlatList
-            data={categories}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryList}
-            renderItem={({ item }) => (
-              <Link href={`/category/${item.slug}`} asChild>
-                <Pressable style={styles.categoryCard}>
-                  {item.image ? (
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.categoryImage}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.categoryImage,
-                        { backgroundColor: colors.surfaceMuted },
-                      ]}
-                    />
-                  )}
-                  <Text
-                    style={[styles.categoryName, { color: colors.textPrimary }]}
-                    numberOfLines={2}
-                  >
-                    {item.name}
-                  </Text>
-                </Pressable>
-              </Link>
-            )}
-            keyExtractor={(item) => item.id}
-          />
+          {categoriesLoading ? (
+            <FlatList
+              data={[1, 2, 3, 4, 5]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryList}
+              renderItem={() => <CategorySkeleton />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={categories}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryList}
+              renderItem={({ item }) => (
+                <Link href={`/category/${item.slug}`} asChild>
+                  <Pressable style={styles.categoryCard}>
+                    {item.image ? (
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.categoryImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          styles.categoryImage,
+                          { backgroundColor: colors.surfaceMuted },
+                        ]}
+                      />
+                    )}
+                    <Text
+                      style={[styles.categoryName, { color: colors.textPrimary }]}
+                      numberOfLines={2}
+                    >
+                      {item.name}
+                    </Text>
+                  </Pressable>
+                </Link>
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
         </View>
 
-        <HeroBanner banners={heroBanners} />
+        {bannersLoading ? (
+          <View style={styles.section}>
+            <BannerSkeleton height={200} />
+          </View>
+        ) : (
+          <HeroBanner banners={heroBanners} />
+        )}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -197,16 +208,62 @@ export default function HomeScreen() {
               </Pressable>
             </Link>
           </View>
-          <FlatList
-            data={newArrivalsList}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.productList}
-            renderItem={({ item }) => (
-              <ProductCard product={item} width={155} />
-            )}
-            keyExtractor={(item) => item.id}
-          />
+          {newArrivalsLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={newArrivalsList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
+        </View>
+           <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Hot Deals
+            </Text>
+            <Link href="/(tabs)/explore?sortBy=offer" asChild>
+              <Pressable>
+                <Text style={[styles.viewAll, { color: colors.accent }]}>
+                  View All
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+          {hotDealsLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={hotDealsList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
         </View>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -221,20 +278,51 @@ export default function HomeScreen() {
               </Pressable>
             </Link>
           </View>
-          <FlatList
-            data={featuredProductsList}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.productList}
-            renderItem={({ item }) => (
-              <ProductCard product={item} width={155} />
-            )}
-            keyExtractor={(item) => item.id}
-          />
+          {featuredLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={featuredProductsList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
         </View>
-                <MidBanner banners={midBanners} />
 
-  <BrandSection brands={brands ?? []} />
+     
+
+        {bannersLoading ? (
+          <View style={styles.section}>
+            <BannerSkeleton height={120} />
+          </View>
+        ) : (
+          <MidBanner banners={midBanners} />
+        )}
+
+        {brandsLoading ? (
+          <View style={styles.section}>
+            <View style={styles.brandSkeletonRow}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <BrandSkeleton key={i} />
+              ))}
+            </View>
+          </View>
+        ) : (
+          <BrandSection brands={brands ?? []} />
+        )}
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
@@ -248,23 +336,30 @@ export default function HomeScreen() {
               </Pressable>
             </Link>
           </View>
-          <FlatList
-            data={bestSellersList}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.productList}
-            renderItem={({ item }) => (
-              <ProductCard product={item} width={155} />
-            )}
-            keyExtractor={(item) => item.id}
-          />
+          {bestSellersLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={bestSellersList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
         </View>
 
-      
-
-       
-
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Latest Blogs
@@ -275,25 +370,48 @@ export default function HomeScreen() {
               </Text>
             </Pressable>
           </View>
-          <View style={styles.blogGrid}>
-            {(blogs ?? []).slice(0, 3).map((blog) => (
-              <View key={blog.id} style={styles.blogItem}>
-                <BlogCard blog={blog} />
-              </View>
-            ))}
-          </View>
-        </View>
+          {blogsLoading ? (
+            <View style={styles.blogGrid}>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={styles.blogItem}>
+                  <BlogCardSkeleton />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.blogGrid}>
+              {(blogs ?? []).slice(0, 3).map((blog) => (
+                <View key={blog.id} style={styles.blogItem}>
+                  <BlogCard blog={blog} />
+                </View>
+              ))}
+            </View>
+          )}
+        </View> */}
 
-        <BottomBanner banners={bottomBanners} />
- <View style={styles.section}>
+        {bannersLoading ? (
+          <View style={styles.section}>
+            <BannerSkeleton height={120} />
+          </View>
+        ) : (
+          <BottomBanner banners={bottomBanners} />
+        )}
+
+        {/* <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             What Our Customers Say
           </Text>
         </View>
-        <TestimonialSlider testimonials={testimonials ?? []} />
-        <View style={styles.bottomSpacer} />
+        {testimonialsLoading ? (
+          <View style={styles.section}>
+            <Skeleton width="100%" height={100} borderRadius={12} />
+          </View>
+        ) : (
+          <TestimonialSlider testimonials={testimonials ?? []} />
+        )}
+        <View style={styles.bottomSpacer} /> */}
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -398,5 +516,10 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xl,
+  },
+  brandSkeletonRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: spacing.md,
   },
 });

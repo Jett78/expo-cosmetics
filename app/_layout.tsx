@@ -12,6 +12,7 @@ import { Manrope_700Bold } from '@expo-google-fonts/manrope/700Bold';
 import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope/800ExtraBold';
 
 import { CommerceProvider } from '../src/context/CommerceContext';
+import { AppLoadingProvider } from '../src/context/AppLoadingContext';
 import { lightColors } from '../src/design-system';
 import QueryProvider from '../src/providers/QueryProvider';
 import { useMemo } from 'react';
@@ -67,17 +68,19 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryProvider>
-        <CommerceProvider>
-          <AppThemeProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: lightColors.background },
-              }}
-            />
-            <StatusBar style="auto" />
-          </AppThemeProvider>
-        </CommerceProvider>
+        <AppLoadingProvider>
+          <CommerceProvider>
+            <AppThemeProvider>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: lightColors.background },
+                }}
+              />
+              <StatusBar style="auto" />
+            </AppThemeProvider>
+          </CommerceProvider>
+        </AppLoadingProvider>
       </QueryProvider>
     </SafeAreaProvider>
   );

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -11,10 +11,15 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { lightColors } from '../src/design-system';
+import { queryClient } from '../src/providers/QueryProvider';
+import { prefetchHomepageData } from '../src/services/homepage/prefetch';
 
 export default function SplashLayout() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
+  const [animationDone, setAnimationDone] = useState(false);
+  const navigationTriggered = useRef(false);
 
   const scale = useSharedValue(0.6);
   const logoOpacity = useSharedValue(0);
@@ -36,33 +41,39 @@ export default function SplashLayout() {
   useEffect(() => {
     if (!ready) return;
 
-    // Phase 1: Fade in + scale up logo
+    prefetchHomepageData(queryClient).then(() => setDataReady(true));
+
     logoOpacity.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
     scale.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
 
-    // Phase 2: Fade out logo after 2s
     const fadeOutTimer = setTimeout(() => {
       logoOpacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.cubic) });
     }, 2000);
 
-    // Phase 3: Fade out screen after 2.5s
     const screenTimer = setTimeout(() => {
       screenOpacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.cubic) });
     }, 2500);
 
-    // Phase 4: Navigate after 3s
-    const navigateTimer = setTimeout(() => {
-      SplashScreen.hideAsync().then(() => {
-        router.replace('/(tabs)');
-      });
-    }, 3000);
+    const doneTimer = setTimeout(() => {
+      setAnimationDone(true);
+    }, 2900);
 
     return () => {
       clearTimeout(fadeOutTimer);
       clearTimeout(screenTimer);
-      clearTimeout(navigateTimer);
+      clearTimeout(doneTimer);
     };
   }, [ready]);
+
+  useEffect(() => {
+    if (!dataReady || !animationDone || navigationTriggered.current) return;
+
+    navigationTriggered.current = true;
+
+    SplashScreen.hideAsync().then(() => {
+      router.replace('/(tabs)');
+    });
+  }, [dataReady, animationDone]);
 
   if (!ready) return null;
 
