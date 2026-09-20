@@ -7,6 +7,8 @@ import {
   TextInput,
   Keyboard,
   ActivityIndicator,
+  Pressable,
+  Dimensions,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,15 +16,20 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useActiveProducts } from '../../src/services/product/hooks';
-import { popularSearches, recentSearches } from '../../src/data/search';
+import { useRecentSearches } from '../../src/hooks/useRecentSearches';
+import { popularSearches } from '../../src/data/search';
 import { spacing, radius, typography } from '../../src/design-system';
 import type { ApiProduct } from '../../src/types';
 import ProductCard from '../../src/components/ProductCard/Card';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 
 export default function SearchScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ query?: string; brandId?: string }>();
   const { data: allProducts, isLoading } = useActiveProducts();
+  const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
 
   const getInitialQuery = useCallback(() => {
     if (params.query) return params.query;
@@ -68,6 +75,15 @@ export default function SearchScreen() {
     setQuery(text);
   }, []);
 
+  const handleSubmit = useCallback(() => {
+    const trimmed = query.trim();
+    if (trimmed) {
+      addSearch(trimmed);
+      setDebouncedQuery(trimmed);
+      Keyboard.dismiss();
+    }
+  }, [query, addSearch]);
+
   const clearSearch = useCallback(() => {
     setQuery('');
     setDebouncedQuery('');
@@ -76,21 +92,41 @@ export default function SearchScreen() {
   const handleChipPress = useCallback((term: string) => {
     setQuery(term);
     setDebouncedQuery(term);
+    addSearch(term);
     Keyboard.dismiss();
-  }, []);
+  }, [addSearch]);
 
   const renderProduct = useCallback(
-    ({ item }: { item: ApiProduct }) => <ProductCard product={item} showWishlist={false} />,
+    ({ item }: { item: ApiProduct }) => <ProductCard product={item} showWishlist={false} width={CARD_WIDTH} />,
     []
   );
 
-  const renderChip = useCallback(
+  const renderRecentChip = useCallback(
+    (term: string, index: number) => (
+      <TouchableOpacity
+        key={`${term}-${index}`}
+        onPress={() => handleChipPress(term)}
+        onLongPress={() => removeSearch(term)}
+        style={[styles.chip, { backgroundColor: colors.surfaceMuted }]}
+      >
+        <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+        <Text style={[styles.chipText, { color: colors.textPrimary }]}>{term}</Text>
+        <Pressable onPress={() => removeSearch(term)} hitSlop={6}>
+          <Ionicons name="close" size={14} color={colors.textSecondary} />
+        </Pressable>
+      </TouchableOpacity>
+    ),
+    [colors, handleChipPress, removeSearch]
+  );
+
+  const renderPopularChip = useCallback(
     (term: string, index: number) => (
       <TouchableOpacity
         key={`${term}-${index}`}
         onPress={() => handleChipPress(term)}
         style={[styles.chip, { backgroundColor: colors.surfaceMuted }]}
       >
+        <Ionicons name="trending-up-outline" size={14} color={colors.accent} />
         <Text style={[styles.chipText, { color: colors.textPrimary }]}>{term}</Text>
       </TouchableOpacity>
     ),
@@ -117,6 +153,7 @@ export default function SearchScreen() {
           placeholderTextColor={colors.textSecondary}
           value={query}
           onChangeText={handleSearch}
+          onSubmitEditing={handleSubmit}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           autoFocus
@@ -144,11 +181,16 @@ export default function SearchScreen() {
             <View>
               {recentSearches.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    Recent Searches
-                  </Text>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      Recent Searches
+                    </Text>
+                    <TouchableOpacity onPress={clearAll}>
+                      <Text style={[styles.clearAll, { color: colors.accent }]}>Clear all</Text>
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.chipsContainer}>
-                    {recentSearches.map((term, i) => renderChip(term, i))}
+                    {recentSearches.map((term, i) => renderRecentChip(term, i))}
                   </View>
                 </View>
               )}
@@ -157,7 +199,7 @@ export default function SearchScreen() {
                   Popular Searches
                 </Text>
                 <View style={styles.chipsContainer}>
-                  {popularSearches.map((term, i) => renderChip(term, i))}
+                  {popularSearches.map((term, i) => renderPopularChip(term, i))}
                 </View>
               </View>
             </View>
@@ -230,11 +272,20 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing['2xl'],
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
   sectionTitle: {
     ...typography.captionLarge,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: spacing.md,
+  },
+  clearAll: {
+    ...typography.captionLarge,
+    fontWeight: '600',
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -242,9 +293,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
+    gap: spacing.xs,
   },
   chipText: {
     ...typography.body,
@@ -256,7 +310,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing['3xl'],
   },
   productRow: {
-    justifyContent: 'space-between',
+    gap: spacing.md,
     marginBottom: spacing.md,
   },
   emptyState: {

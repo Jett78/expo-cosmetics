@@ -10,15 +10,21 @@ type BrandCardProps = {
 };
 
 export default function BrandCard({ brand }: BrandCardProps) {
+  const imageUri = brand.imageLink?.original ?? brand.image;
+
   return (
     <Link href={`/(tabs)/explore?brandId=${brand.id}`} asChild>
       <Pressable style={styles.container}>
         <View style={styles.imageWrapper}>
-          <Image
-            source={{ uri: brand.imageLink.original }}
-            style={styles.image}
-            contentFit="contain"
-          />
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.image}
+              contentFit="contain"
+            />
+          ) : (
+            <View style={[styles.image, { backgroundColor: '#F5F0ED' }]} />
+          )}
         </View>
       </Pressable>
     </Link>

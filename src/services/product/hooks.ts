@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { searchProducts, fetchFeaturedProducts, fetchBestSellers, fetchActiveProducts, fetchProductBySlug } from './api';
 import type { ProductSearchParams } from '../../types';
 
@@ -50,5 +50,26 @@ export function useProductBySlug(slug: string) {
     staleTime: PRODUCT_STALE_TIME,
     enabled: !!slug,
     select: (data) => data.data,
+  });
+}
+
+export function useInfiniteProducts(params: { sortBy?: string; brandId?: string; categoryId?: string }) {
+  return useInfiniteQuery({
+    queryKey: ['products', 'infinite', params],
+    queryFn: ({ pageParam = 1 }) => searchProducts({ ...params, page: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (allPages.length < lastPage.products.totalPages) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    select: (data) => {
+      const products = data.pages.flatMap((p) => p.products.filteredProducts);
+      const lastPage = data.pages[data.pages.length - 1];
+      const totalPages = lastPage?.products.totalPages ?? 0;
+      const totalItems = lastPage?.products.totalItems ?? products.length;
+      return { products, totalPages, totalItems };
+    },
   });
 }

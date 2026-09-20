@@ -1,19 +1,31 @@
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 
-import { useMemo } from 'react';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { spacing, radius, typography } from '../../src/design-system';
 import { useCategories } from '../../src/services/category/hooks';
-import { useProducts, useActiveProducts } from '../../src/services/product/hooks';
+import { useBrands } from '../../src/services/brand/hooks';
+import {
+  useProducts,
+  useFeaturedProducts,
+  useBestSellers,
+  useInfiniteProducts,
+} from '../../src/services/product/hooks';
 import ProductCard from '../../src/components/ProductCard/Card';
+import BrandCard from '../../src/components/brands/BrandCard';
+import {
+  ProductCardSkeleton,
+  CategorySkeleton,
+  BrandSkeleton,
+} from '../../src/components/Skeleton';
+import type { ApiProduct } from '../../src/types';
 
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
 export default function ExploreScreen() {
   const { colors } = useAppTheme();
@@ -21,34 +33,154 @@ export default function ExploreScreen() {
   const brandId = params.brandId;
   const sortBy = params.sortBy;
 
-  const { data: categories } = useCategories();
-  const { data: trendingData } = useProducts({
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: brands, isLoading: brandsLoading } = useBrands();
+  const { data: featuredProducts, isLoading: featuredLoading } = useFeaturedProducts();
+  const { data: bestSellers, isLoading: bestSellersLoading } = useBestSellers();
+  const { data: hotDealsData, isLoading: hotDealsLoading } = useProducts({
     page: 1,
+    sortBy: 'offer',
+    brandId: brandId || undefined,
+  });
+
+  const {
+    data: infiniteData,
+    isLoading: infiniteLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteProducts({
     sortBy: sortBy || 'newest',
     brandId: brandId || undefined,
   });
-  const { data: allProducts } = useActiveProducts();
 
-  const trendingProducts = trendingData?.products ?? [];
+  const featuredProductsList = featuredProducts ?? [];
+  const bestSellersList = bestSellers ?? [];
+  const hotDealsList = (hotDealsData?.products ?? []).slice(0, 10);
+  const infiniteProducts = infiniteData?.products ?? [];
 
-  const uniqueBrands = useMemo(() => {
-    if (!allProducts) return [];
-    const brandMap = new Map<string, { id: string; name: string }>();
-    for (const product of allProducts) {
-      if (product.brand?.name && !brandMap.has(product.brand.name)) {
-        brandMap.set(product.brand.name, {
-          id: product.brand.id,
-          name: product.brand.name,
-        });
-      }
+  const filteredBrandName = brandId
+    ? (brands ?? []).find((b) => b.id === brandId)?.name ?? null
+    : null;
+
+  const isBrandFilter = !!brandId;
+  const isSortFilter = !!sortBy;
+  const isFiltered = isBrandFilter || isSortFilter;
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-    return Array.from(brandMap.values());
-  }, [allProducts]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const filteredBrandName = useMemo(() => {
-    if (!brandId) return null;
-    return uniqueBrands.find((b) => b.id === brandId)?.name ?? null;
-  }, [brandId, uniqueBrands]);
+  const renderFilteredHeader = () => (
+    <View>
+      {brandId && (
+        <View style={styles.section}>
+          <Link href="/(tabs)/explore" asChild>
+            <Pressable
+              style={StyleSheet.flatten([
+                styles.backBtnInner,
+                { backgroundColor: colors.surfaceMuted },
+              ])}
+            >
+              <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
+              <Text style={[styles.backText, { color: colors.textPrimary }]}>
+                All Brands
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
+      )}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            {sortBy === 'offer' ? 'Hot Deals' : 'Products'}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderFilteredProduct = useCallback(
+    ({ item }: { item: ApiProduct }) => (
+      <View style={styles.filteredCardItem}>
+        <ProductCard product={item} width={CARD_WIDTH} />
+      </View>
+    ),
+    []
+  );
+
+  const renderFilteredFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.loadingMore}>
+        <ActivityIndicator size="small" color={colors.accent} />
+      </View>
+    );
+  };
+
+  const renderFilteredEmpty = () => {
+    if (infiniteLoading) {
+      return (
+        <View style={styles.skeletonGrid}>
+          {[1, 2, 3, 4].map((i) => (
+            <View key={i} style={styles.skeletonCardItem}>
+              <ProductCardSkeleton width={CARD_WIDTH} />
+            </View>
+          ))}
+        </View>
+      );
+    }
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+          No products found
+        </Text>
+      </View>
+    );
+  };
+
+  if (isFiltered) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+            {filteredBrandName ?? (sortBy === 'offer' ? 'Hot Deals' : 'Explore')}
+          </Text>
+        </View>
+
+        <Link href="/(tabs)/search" asChild>
+          <Pressable
+            style={StyleSheet.flatten([
+              styles.searchBar,
+              { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+            ])}
+          >
+            <Ionicons name="search-outline" size={20} color={colors.textMuted} />
+            <Text style={[styles.searchPlaceholder, { color: colors.textMuted }]}>
+              Search products, brands...
+            </Text>
+          </Pressable>
+        </Link>
+
+        <FlatList
+          data={infiniteProducts}
+          numColumns={2}
+          columnWrapperStyle={styles.filteredRow}
+          contentContainerStyle={styles.filteredContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderFilteredHeader}
+          renderItem={renderFilteredProduct}
+          keyExtractor={(item) => item.id}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={renderFilteredFooter}
+          ListEmptyComponent={renderFilteredEmpty}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -60,7 +192,10 @@ export default function ExploreScreen() {
 
       <Link href="/(tabs)/search" asChild>
         <Pressable
-          style={StyleSheet.flatten([styles.searchBar, { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle }])}
+          style={StyleSheet.flatten([
+            styles.searchBar,
+            { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+          ])}
         >
           <Ionicons name="search-outline" size={20} color={colors.textMuted} />
           <Text style={[styles.searchPlaceholder, { color: colors.textMuted }]}>
@@ -69,89 +204,164 @@ export default function ExploreScreen() {
         </Pressable>
       </Link>
 
-      <FlatList
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        ListHeaderComponent={
-          <>
-            {!brandId && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Categories</Text>
-                <FlatList
-                  data={categories}
-                  numColumns={2}
-                  scrollEnabled={false}
-                  columnWrapperStyle={styles.categoryGrid}
-                  contentContainerStyle={styles.gridContent}
-                  renderItem={({ item }) => (
-                    <Link href={`/category/${item.slug}`} asChild>
-                      <Pressable style={StyleSheet.flatten([styles.categoryCard, { backgroundColor: colors.surface }])}>
-                        {item.image ? (
-                          <Image source={{ uri: item.image }} style={styles.categoryImage} contentFit="cover" />
-                        ) : (
-                          <View style={[styles.categoryImage, { backgroundColor: colors.surfaceMuted }]} />
-                        )}
-                        <View style={[styles.categoryOverlay, { backgroundColor: colors.overlayStrong }]}>
-                          <Text style={styles.categoryName}>{item.name}</Text>
-                        </View>
-                      </Pressable>
-                    </Link>
-                  )}
-                  keyExtractor={(item) => item.id}
-                />
-              </View>
-            )}
-
-            {!brandId && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Brands</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.brandList}
-                >
-                  {uniqueBrands.map((item) => (
-                    <Link key={item.id} href={`/(tabs)/explore?brandId=${item.id}`} asChild>
-                      <Pressable style={StyleSheet.flatten([styles.brandCard, { backgroundColor: colors.surface, borderColor: colors.borderSubtle }])}>
-                        <Text style={[styles.brandName, { color: colors.textPrimary }]}>{item.name}</Text>
-                      </Pressable>
-                    </Link>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {brandId && (
-              <View style={styles.section}>
-                <Pressable onPress={() => {}} style={styles.backBtn}>
-                  <Link href="/(tabs)/explore" asChild>
-                    <Pressable style={StyleSheet.flatten([styles.backBtnInner, { backgroundColor: colors.surfaceMuted }])}>
-                      <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
-                      <Text style={[styles.backText, { color: colors.textPrimary }]}>All Brands</Text>
-                    </Pressable>
-                  </Link>
-                </Pressable>
-              </View>
-            )}
-          </>
-        }
-        data={trendingProducts}
-        numColumns={2}
-        scrollEnabled={false}
-        columnWrapperStyle={styles.productGrid}
-        ListFooterComponent={
-          <View>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                {brandId ? 'Products' : sortBy === 'offer' ? 'Hot Deals' : 'Trending Now'}
-              </Text>
+      >
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Categories
+          </Text>
+          {categoriesLoading ? (
+            <View style={styles.categoryGrid}>
+              {[1, 2, 3, 4].map((i) => (
+                <View key={i} style={styles.categoryGridItem}>
+                  <CategorySkeleton />
+                </View>
+              ))}
             </View>
+          ) : (
+            <View style={styles.categoryGrid}>
+              {(categories ?? []).map((item) => (
+                <Link key={item.id} href={`/category/${item.slug}`} asChild>
+                  <Pressable style={styles.categoryGridItem}>
+                    {item.image ? (
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.categoryImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          styles.categoryImage,
+                          { backgroundColor: colors.surfaceMuted },
+                        ]}
+                      />
+                    )}
+                    <Text
+                      style={[styles.categoryName, { color: colors.textPrimary }]}
+                      numberOfLines={2}
+                    >
+                      {item.name}
+                    </Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Shop by Brand
+          </Text>
+          {brandsLoading ? (
+            <View style={styles.brandGrid}>
+              {[1, 2, 3, 4].map((i) => (
+                <View key={i} style={styles.brandGridItem}>
+                  <BrandSkeleton />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.brandGrid}>
+              {(brands ?? []).map((item) => (
+                <View key={item.id} style={styles.brandGridItem}>
+                  <BrandCard brand={item} />
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Hot Deals
+            </Text>
           </View>
-        }
-        ListFooterComponentStyle={styles.trendingHeader}
-        renderItem={({ item }) => <ProductCard product={item} />}
-        keyExtractor={(item) => item.id}
-      />
+          {hotDealsLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={hotDealsList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Best Sellers
+            </Text>
+          </View>
+          {bestSellersLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={bestSellersList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Featured Products
+            </Text>
+          </View>
+          {featuredLoading ? (
+            <FlatList
+              data={[1, 2, 3]}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={() => <ProductCardSkeleton width={155} />}
+              keyExtractor={(item) => String(item)}
+            />
+          ) : (
+            <FlatList
+              data={featuredProductsList}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productList}
+              renderItem={({ item }) => (
+                <ProductCard product={item} width={155} />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -189,56 +399,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   sectionHeader: {
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   sectionTitle: {
     ...typography.h3,
-    marginBottom: spacing.lg,
+    fontWeight: '800',
   },
   categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
-  gridContent: {
-    gap: spacing.md,
-  },
-  categoryCard: {
-    flex: 1,
-    height: 140,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
+  categoryGridItem: {
+    width: '47%',
   },
   categoryImage: {
     width: '100%',
-    height: '100%',
-  },
-  categoryOverlay: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'flex-end',
-    padding: spacing.lg,
+    height: 120,
+    borderRadius: radius.lg,
   },
   categoryName: {
-    ...typography.h4,
-    color: '#FFFFFF',
+    ...typography.caption,
+    fontWeight: '800',
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
-  brandList: {
+  brandGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
-    paddingVertical: spacing.xs,
+    marginTop: spacing.lg,
   },
-  brandCard: {
-    minWidth: 120,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.xl,
-    borderWidth: 1,
+  brandGridItem: {
+    width: '47%',
     alignItems: 'center',
-  },
-  brandName: {
-    ...typography.bodyStrong,
-    marginBottom: spacing.xxs,
-  },
-  backBtn: {
-    marginBottom: spacing.md,
   },
   backBtnInner: {
     flexDirection: 'row',
@@ -252,11 +449,39 @@ const styles = StyleSheet.create({
   backText: {
     ...typography.bodyStrong,
   },
-  trendingHeader: {
-    marginTop: spacing['2xl'],
-  },
-  productGrid: {
+  productList: {
     gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  filteredContent: {
     paddingHorizontal: spacing.xl,
+    paddingBottom: 120,
+  },
+  filteredRow: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  filteredCardItem: {
+    flex: 1,
+    maxWidth: CARD_WIDTH,
+  },
+  skeletonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  skeletonCardItem: {
+    width: CARD_WIDTH,
+  },
+  loadingMore: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: spacing['4xl'],
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.body,
   },
 });

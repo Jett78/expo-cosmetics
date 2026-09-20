@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ScrollView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text } from '@rneui/themed';
@@ -17,9 +18,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { spacing, radius, typography } from '../../src/design-system';
 import { useCategories } from '../../src/services/category/hooks';
-import { useProducts } from '../../src/services/product/hooks';
+import { useInfiniteProducts } from '../../src/services/product/hooks';
 import type { ApiCategory, ApiProduct } from '../../src/types';
 import ProductCard from '../../src/components/ProductCard/Card';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 
 const SORT_OPTIONS = [
   { id: 'newest', name: 'Newest' },
@@ -55,22 +59,25 @@ export default function CategoryScreen() {
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('newest');
   const [showSortSheet, setShowSortSheet] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
 
   const activeCategoryId = useMemo(() => {
     if (selectedSubId) return selectedSubId;
     return category?.id;
   }, [selectedSubId, category]);
 
-  const { data: productsData, isLoading: productsLoading, refetch } = useProducts({
-    page,
+  const {
+    data: infiniteData,
+    isLoading: productsLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    refetch,
+  } = useInfiniteProducts({
     sortBy,
     categoryId: activeCategoryId,
   });
 
-  const products = productsData?.products ?? [];
-  const totalPages = productsData?.totalPages ?? 0;
+  const allProducts = infiniteData?.products ?? [];
 
   const categoryName = useMemo(() => {
     if (category) return category.name;
@@ -82,46 +89,17 @@ export default function CategoryScreen() {
   }, [category, slug]);
 
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    setPage(1);
-    setSortBy('newest');
-    setSelectedSubId(null);
     refetch();
-    setTimeout(() => setRefreshing(false), 500);
   }, [refetch]);
 
   const handleLoadMore = useCallback(() => {
-    if (page < totalPages) {
-      setPage((prev) => prev + 1);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [page, totalPages]);
-
-  const sortedProducts = useMemo(() => {
-    const result = [...products];
-    switch (sortBy) {
-      case 'price-asc':
-        return result.sort((a, b) => {
-          const priceA = a.isOfferedPriceActive && a.offeredPrice > 0 ? a.offeredPrice : a.price;
-          const priceB = b.isOfferedPriceActive && b.offeredPrice > 0 ? b.offeredPrice : b.price;
-          return priceA - priceB;
-        });
-      case 'price-desc':
-        return result.sort((a, b) => {
-          const priceA = a.isOfferedPriceActive && a.offeredPrice > 0 ? a.offeredPrice : a.price;
-          const priceB = b.isOfferedPriceActive && b.offeredPrice > 0 ? b.offeredPrice : b.price;
-          return priceB - priceA;
-        });
-      case 'rating':
-        return result.sort((a, b) => b.avgRating - a.avgRating);
-      case 'popular':
-        return result.sort((a, b) => b.reviews.length - a.reviews.length);
-      default:
-        return result;
-    }
-  }, [products, sortBy]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderProductCard = useCallback(
-    ({ item }: { item: ApiProduct }) => <ProductCard product={item} />,
+    ({ item }: { item: ApiProduct }) => <ProductCard product={item} width={CARD_WIDTH} />,
     [],
   );
 
@@ -142,6 +120,15 @@ export default function CategoryScreen() {
       </Pressable>
     </View>
   );
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.loadingMore}>
+        <ActivityIndicator size="small" color={colors.accent} />
+      </View>
+    );
+  };
 
   if (categoriesLoading) {
     return (
@@ -205,10 +192,7 @@ export default function CategoryScreen() {
             {subcategories.map((sub) => (
               <Pressable
                 key={sub.id}
-                onPress={() => {
-                  setSelectedSubId(sub.id);
-                  setPage(1);
-                }}
+                onPress={() => setSelectedSubId(sub.id)}
                 style={[
                   styles.tab,
                   {
@@ -236,11 +220,7 @@ export default function CategoryScreen() {
 
       {/* Sort Bar */}
       <View style={[styles.sortBar, { borderBottomColor: colors.borderSubtle }]}>
-        <View style={styles.countRow}>
-          <Text style={[typography.captionLarge, { color: colors.textSecondary }]}>
-            {products.length} {products.length === 1 ? 'product' : 'products'}
-          </Text>
-        </View>
+        <View style={styles.countRow} />
         <Pressable
           onPress={() => setShowSortSheet(true)}
           style={[styles.sortBtn, { backgroundColor: colors.surfaceMuted, borderColor: colors.borderStrong }]}
@@ -253,13 +233,13 @@ export default function CategoryScreen() {
       </View>
 
       {/* Product Grid */}
-      {productsLoading && products.length === 0 ? (
+      {productsLoading && allProducts.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
         <FlatList
-          data={sortedProducts}
+          data={allProducts}
           renderItem={renderProductCard}
           numColumns={2}
           keyExtractor={(item) => item.id}
@@ -268,17 +248,11 @@ export default function CategoryScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.3}
+          onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
+            <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={colors.accent} />
           }
-          ListFooterComponent={
-            page < totalPages ? (
-              <View style={styles.loadingMore}>
-                <ActivityIndicator size="small" color={colors.accent} />
-              </View>
-            ) : null
-          }
+          ListFooterComponent={renderFooter}
         />
       )}
 
@@ -302,7 +276,6 @@ export default function CategoryScreen() {
                   key={option.id}
                   onPress={() => {
                     setSortBy(option.id);
-                    setPage(1);
                     setShowSortSheet(false);
                   }}
                   style={[

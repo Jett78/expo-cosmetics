@@ -101,6 +101,7 @@ export type ProductsApiResponse = {
   message: string;
   products: {
     totalPages: number;
+    totalItems: number;
     filteredProducts: ApiProduct[];
   };
 };
