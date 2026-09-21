@@ -13,7 +13,7 @@ export default function BrandCard({ brand }: BrandCardProps) {
   const imageUri = brand.imageLink?.original ?? brand.image;
 
   return (
-    <Link href={`/(tabs)/explore?brandId=${brand.id}`} asChild>
+    <Link href={`/(tabs)/shop?brandId=${brand.id}`} asChild>
       <Pressable style={styles.container}>
         <View style={styles.imageWrapper}>
           {imageUri ? (

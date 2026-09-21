@@ -200,7 +200,7 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               New Arrivals
             </Text>
-            <Link href="/(tabs)/explore" asChild>
+            <Link href="/(tabs)/shop" asChild>
               <Pressable>
                 <Text style={[styles.viewAll, { color: colors.accent }]}>
                   View All
@@ -235,7 +235,7 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Hot Deals
             </Text>
-            <Link href="/(tabs)/explore?sortBy=offer" asChild>
+            <Link href="/(tabs)/shop?sortBy=offer" asChild>
               <Pressable>
                 <Text style={[styles.viewAll, { color: colors.accent }]}>
                   View All
@@ -270,7 +270,7 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Featured Collection
             </Text>
-            <Link href="/(tabs)/explore" asChild>
+            <Link href="/(tabs)/shop" asChild>
               <Pressable>
                 <Text style={[styles.viewAll, { color: colors.accent }]}>
                   View All
@@ -328,7 +328,7 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Best Sellers
             </Text>
-            <Link href="/(tabs)/explore" asChild>
+            <Link href="/(tabs)/shop" asChild>
               <Pressable>
                 <Text style={[styles.viewAll, { color: colors.accent }]}>
                   View All

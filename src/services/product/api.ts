@@ -9,6 +9,9 @@ export function searchProducts(
     sortBy: params.sortBy ?? 'newest',
     categoryId: params.categoryId,
     brandId: params.brandId,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    rating: params.rating,
   });
 }
 

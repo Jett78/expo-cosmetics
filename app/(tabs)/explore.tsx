@@ -77,7 +77,7 @@ export default function ExploreScreen() {
     <View>
       {brandId && (
         <View style={styles.section}>
-          <Link href="/(tabs)/explore" asChild>
+           <Link href="/(tabs)/shop" asChild>
             <Pressable
               style={StyleSheet.flatten([
                 styles.backBtnInner,
