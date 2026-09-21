@@ -1,18 +1,13 @@
-import React from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
-import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
+import { Text } from '@rneui/themed';
 import { Link } from 'expo-router';
+import React from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCommerce } from '../../src/context/CommerceContext';
+import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
-import { spacing, radius, typography, shadows } from '../../src/design-system';
 
 type MenuItem = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -28,9 +23,101 @@ const menuItems: MenuItem[] = [
   { icon: 'help-circle-outline', label: 'Help' },
 ];
 
+const guestMenuItems: MenuItem[] = [
+  { icon: 'information-circle-outline', label: 'About Us' },
+  { icon: 'call-outline', label: 'Contact Us' },
+  { icon: 'chatbubble-ellipses-outline', label: 'FAQ' },
+];
+
 export default function AccountScreen() {
   const { colors } = useAppTheme();
   const { user, logout, isAuthenticated } = useCommerce();
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={['top']}
+      >
+        <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
+          <Text h3 style={[styles.headerTitle, { color: colors.textPrimary }]}>
+            Account
+          </Text>
+        </View>
+
+        <View style={styles.guestContainer}>
+          <View style={[styles.guestIconContainer, { backgroundColor: colors.accent }]}>
+            <Ionicons name='person-outline' size={48} color='#FFFFFF' />
+          </View>
+          <Text style={[styles.guestTitle, { color: colors.textPrimary }]}>
+            Welcome to La Cosmetics
+          </Text>
+          <Text style={[styles.guestSubtitle, { color: colors.textSecondary }]}>
+            Sign in to access your orders, wishlist, and personalized recommendations
+          </Text>
+
+          <Link href='/(auth)/login' asChild>
+            <TouchableOpacity
+              style={StyleSheet.flatten([styles.signInButton, { backgroundColor: colors.accent }])}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={StyleSheet.flatten([styles.signInButtonText, { color: colors.textInverse }])}
+              >
+                Sign In
+              </Text>
+            </TouchableOpacity>
+          </Link>
+
+          <Link href='/(auth)/register' asChild>
+            <TouchableOpacity
+              style={StyleSheet.flatten([
+                styles.registerButton,
+                { borderColor: colors.borderStrong },
+              ])}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={StyleSheet.flatten([
+                  styles.registerButtonText,
+                  { color: colors.textPrimary },
+                ])}
+              >
+                Create Account
+              </Text>
+            </TouchableOpacity>
+          </Link>
+
+          <View style={[styles.guestMenuSection, { backgroundColor: colors.surface }]}>
+            {guestMenuItems.map((item, index) => {
+              const isLast = index === guestMenuItems.length - 1;
+              return (
+                <TouchableOpacity
+                  key={item.label}
+                  style={[
+                    styles.menuRow,
+                    !isLast && {
+                      borderBottomColor: colors.borderSubtle,
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                    },
+                  ]}
+                  activeOpacity={0.6}
+                >
+                  <View style={styles.menuLeft}>
+                    <Ionicons name={item.icon} size={20} color={colors.textSecondary} />
+                    <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>
+                      {item.label}
+                    </Text>
+                  </View>
+                  <Ionicons name='chevron-forward' size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const userName = user?.name ?? 'Guest';
   const userEmail = user?.email ?? 'guest@example.com';
@@ -42,17 +129,17 @@ export default function AccountScreen() {
     .slice(0, 2);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['top']}
+    >
       <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
         <Text h3 style={[styles.headerTitle, { color: colors.textPrimary }]}>
           Account
         </Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
           <View style={[styles.avatar, { backgroundColor: colors.accentLight }]}>
             <Text style={[styles.avatarText, { color: colors.accent }]}>{initials}</Text>
@@ -70,9 +157,11 @@ export default function AccountScreen() {
               <>
                 <View style={styles.menuLeft}>
                   <Ionicons name={item.icon} size={22} color={colors.textPrimary} />
-                  <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{item.label}</Text>
+                  <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>
+                    {item.label}
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                <Ionicons name='chevron-forward' size={18} color={colors.textSecondary} />
               </>
             );
 
@@ -83,7 +172,10 @@ export default function AccountScreen() {
                     <TouchableOpacity
                       style={StyleSheet.flatten([
                         styles.menuRow,
-                        !isLast && { borderBottomColor: colors.borderSubtle, borderBottomWidth: StyleSheet.hairlineWidth },
+                        !isLast && {
+                          borderBottomColor: colors.borderSubtle,
+                          borderBottomWidth: StyleSheet.hairlineWidth,
+                        },
                       ])}
                       activeOpacity={0.6}
                     >
@@ -94,7 +186,10 @@ export default function AccountScreen() {
                   <TouchableOpacity
                     style={[
                       styles.menuRow,
-                      !isLast && { borderBottomColor: colors.borderSubtle, borderBottomWidth: StyleSheet.hairlineWidth },
+                      !isLast && {
+                        borderBottomColor: colors.borderSubtle,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                      },
                     ]}
                     activeOpacity={0.6}
                   >
@@ -111,7 +206,7 @@ export default function AccountScreen() {
           activeOpacity={0.7}
           onPress={logout}
         >
-          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+          <Ionicons name='log-out-outline' size={20} color={colors.danger} />
           <Text style={[styles.signOutText, { color: colors.danger }]}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -142,7 +237,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     borderRadius: radius.xl,
     marginBottom: spacing.xl,
-    ...shadows.sm,
   },
   avatar: {
     width: 60,
@@ -169,7 +263,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     overflow: 'hidden',
     marginBottom: spacing.xl,
-    ...shadows.sm,
   },
   menuRow: {
     flexDirection: 'row',
@@ -197,5 +290,63 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     ...typography.button,
+  },
+  guestContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing['4xl'],
+  },
+  guestIconContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  guestTitle: {
+    ...typography.h2,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  guestSubtitle: {
+    ...typography.body,
+    textAlign: 'center',
+    marginBottom: spacing['2xl'],
+    lineHeight: 22,
+    paddingHorizontal: spacing.sm,
+  },
+  signInButton: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: radius.pill,
+    marginBottom: spacing.md,
+  },
+  signInButtonText: {
+    ...typography.button,
+    textTransform: 'none',
+  },
+  registerButton: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    backgroundColor: 'transparent',
+  },
+  registerButtonText: {
+    ...typography.button,
+    textTransform: 'none',
+  },
+  guestMenuSection: {
+    width: '100%',
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    marginTop: spacing.xl,
   },
 });

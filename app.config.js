@@ -39,6 +39,7 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      'expo-web-browser',
       ...(IS_DEV_CLIENT ? ['expo-dev-client'] : []),
       'expo-splash-screen',
       [
