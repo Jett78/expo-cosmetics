@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -15,6 +15,7 @@ import { Link } from 'expo-router';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { spacing, radius, typography } from '../../src/design-system';
+import { useTabBarVisibility } from '../../src/context/TabBarVisibilityContext';
 import { useShopFilter, ShopFilterProvider } from '../../src/context/ShopFilterContext';
 import { useInfiniteProducts } from '../../src/services/product/hooks';
 import { useCategories } from '../../src/services/category/hooks';
@@ -30,6 +31,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
 function ShopContent() {
   const { colors } = useAppTheme();
+  const { setTabBarHidden } = useTabBarVisibility();
   const {
     filters,
     setCategoryId,
@@ -47,6 +49,10 @@ function ShopContent() {
 
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [showSortSheet, setShowSortSheet] = useState(false);
+
+  useEffect(() => {
+    setTabBarHidden(showFilterSheet || showSortSheet);
+  }, [showFilterSheet, showSortSheet, setTabBarHidden]);
 
   const {
     data: infiniteData,

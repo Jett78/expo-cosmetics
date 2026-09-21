@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, runOnJS } from 'react-native-reanimated';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    height: '45%',
+    height: '65%',
   },
   header: {
     flexDirection: 'row',

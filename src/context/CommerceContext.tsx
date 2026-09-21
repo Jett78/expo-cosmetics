@@ -1,9 +1,13 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { products as allProducts } from '../data';
 import type { Product } from '../data/products';
 
 export type SortId = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular';
+
+const AUTH_TOKEN_KEY = 'auth_token';
+const AUTH_USER_KEY = 'auth_user';
 
 type CommerceUser = {
   email: string;
@@ -38,9 +42,11 @@ type CommerceContextValue = {
   getCartItemCount: () => number;
   isAuthenticated: boolean;
   isFavorite: (productId: string) => boolean;
-  login: (email: string, name?: string) => void;
+  login: (email: string, name: string, authToken?: string) => void;
   logout: () => void;
-  register: (email: string, name: string) => void;
+  register: (email: string, name: string, token?: string) => void;
+  googleLogin: (name: string, email: string, token: string) => void;
+  token: string | null;
   resetCheckout: () => void;
   resetFilters: () => void;
   applyFilters: (filters: Partial<FilterState>) => void;
@@ -90,6 +96,26 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   const [filters, setFilters] = useState(defaultFilters);
   const [sortId, setSortId] = useState<SortId>('recommended');
   const [user, setUser] = useState<CommerceUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [authLoaded, setAuthLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadAuth = async () => {
+      try {
+        const storedToken = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+        const storedUser = await SecureStore.getItemAsync(AUTH_USER_KEY);
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setAuthLoaded(true);
+      }
+    };
+    loadAuth();
+  }, []);
 
   const favoriteProducts = useMemo(
     () => allProducts.filter((product) => favoriteIds.includes(product.id)),
@@ -97,14 +123,15 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   );
 
   const filteredProducts = useMemo(() => {
-    let nextProducts = allProducts.filter((product) => {
+    const nextProducts = allProducts.filter((product) => {
       const effectivePrice = product.salePrice ?? product.price;
       const matchesPrice = filters.priceRange
         ? effectivePrice >= filters.priceRange.min && effectivePrice <= filters.priceRange.max
         : true;
       const matchesRating = product.rating >= filters.rating;
       const matchesCategory = filters.category
-        ? product.categoryId === filters.category || product.category.toLowerCase().includes(filters.category.toLowerCase())
+        ? product.categoryId === filters.category ||
+          product.category.toLowerCase().includes(filters.category.toLowerCase())
         : true;
 
       return matchesPrice && matchesRating && matchesCategory;
@@ -113,31 +140,28 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     return sortProducts(nextProducts, sortId);
   }, [filters, sortId]);
 
-  const addToCart = useCallback(
-    (product: Product, quantity = 1, shade?: string, size?: string) => {
-      setCartItems((currentItems) => {
-        const existingIndex = currentItems.findIndex(
-          (item) =>
-            item.product.id === product.id &&
-            item.selectedShade === shade &&
-            item.selectedSize === size
-        );
+  const addToCart = useCallback((product: Product, quantity = 1, shade?: string, size?: string) => {
+    setCartItems((currentItems) => {
+      const existingIndex = currentItems.findIndex(
+        (item) =>
+          item.product.id === product.id &&
+          item.selectedShade === shade &&
+          item.selectedSize === size
+      );
 
-        if (existingIndex >= 0) {
-          const updated = [...currentItems];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            quantity: updated[existingIndex].quantity + quantity,
-          };
-          return updated;
-        }
+      if (existingIndex >= 0) {
+        const updated = [...currentItems];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + quantity,
+        };
+        return updated;
+      }
 
-        return [...currentItems, { product, quantity, selectedShade: shade, selectedSize: size }];
-      });
-      setCheckoutComplete(false);
-    },
-    []
-  );
+      return [...currentItems, { product, quantity, selectedShade: shade, selectedSize: size }];
+    });
+    setCheckoutComplete(false);
+  }, []);
 
   const removeFromCart = useCallback((productId: string) => {
     setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
@@ -149,9 +173,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       return;
     }
     setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+      currentItems.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
     );
   }, []);
 
@@ -219,14 +241,41 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       getCartItemCount,
       isAuthenticated: Boolean(user),
       isFavorite,
-      login: (email, name = 'Shopper') => setUser({ email, name }),
+      login: (email, name, authToken) => {
+        const userData = { email, name };
+        setUser(userData);
+        if (authToken) {
+          setToken(authToken);
+          SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
+          SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
+        }
+      },
       logout: () => {
         setUser(null);
+        setToken(null);
         setCartItems([]);
         setFavoriteIds([]);
         setCheckoutComplete(false);
+        SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {});
+        SecureStore.deleteItemAsync(AUTH_USER_KEY).catch(() => {});
       },
-      register: (email, name) => setUser({ email, name }),
+      register: (email, name, authToken) => {
+        const userData = { email, name };
+        setUser(userData);
+        if (authToken) {
+          setToken(authToken);
+          SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
+          SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
+        }
+      },
+      googleLogin: (name, email, authToken) => {
+        const userData = { email, name };
+        setUser(userData);
+        setToken(authToken);
+        SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
+        SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
+      },
+      token,
       resetCheckout: () => setCheckoutComplete(false),
       resetFilters,
       applyFilters,
@@ -252,6 +301,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       sortId,
       toggleFavorite,
       user,
+      token,
       addToWishlist,
       removeFromWishlist,
       applyFilters,
