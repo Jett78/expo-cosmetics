@@ -16,7 +16,7 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { icon: 'receipt-outline', label: 'My Orders' },
+  { icon: 'receipt-outline', label: 'My Orders', href: '/orders' },
   { icon: 'heart-outline', label: 'Wishlist', href: '/(tabs)/wishlist' },
   { icon: 'location-outline', label: 'Addresses' },
   { icon: 'settings-outline', label: 'Settings' },

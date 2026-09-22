@@ -1,18 +1,33 @@
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { Text } from '@rneui/themed';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { Text } from '@rneui/themed';
 import { Link } from 'expo-router';
+import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { useAppTheme } from '../../src/hooks/useAppTheme';
+import ProductCard from '../../src/components/ProductCard/Card';
 import { useCommerce } from '../../src/context/CommerceContext';
-import { spacing, radius, typography, shadows } from '../../src/design-system';
+import { radius, spacing, typography } from '../../src/design-system';
+import { useAppTheme } from '../../src/hooks/useAppTheme';
+import type { ApiProduct } from '../../src/types/product';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
 export default function WishlistScreen() {
   const { colors } = useAppTheme();
-  const { favoriteProducts, isFavorite, toggleFavorite } = useCommerce();
+  const { favoriteProducts, isAuthenticated, serverWishlistItems } = useCommerce();
 
-  if (favoriteProducts.length === 0) {
+  const serverCount = serverWishlistItems.length;
+  const localCount = favoriteProducts.length;
+  const isEmpty = isAuthenticated ? serverCount === 0 : localCount === 0;
+
+  // Map server wishlist items to ApiProduct format for ProductCard
+  const serverProducts = serverWishlistItems.map((item) => item.product as unknown as ApiProduct);
+
+  const displayProducts = isAuthenticated
+    ? serverProducts
+    : (favoriteProducts as unknown as ApiProduct[]);
+
+  if (isEmpty) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
@@ -20,15 +35,20 @@ export default function WishlistScreen() {
         </View>
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceMuted }]}>
-            <Ionicons name="heart-outline" size={48} color={colors.textMuted} />
+            <Ionicons name='heart-outline' size={44} color={colors.textMuted} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No saved products yet</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            No saved products yet
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             Tap the heart icon on any product to save it here
           </Text>
-          <Link href="/(tabs)" asChild>
-            <Pressable style={StyleSheet.flatten([styles.emptyButton, { backgroundColor: colors.accent }])}>
-              <Text style={styles.emptyButtonText}>Explore Products</Text>
+          <Link href='/(tabs)/shop' asChild>
+            <Pressable
+              style={StyleSheet.flatten([styles.emptyButton, { backgroundColor: colors.accent }])}
+            >
+              <Ionicons name='bag-outline' size={16} color='#fff' />
+              <Text style={styles.emptyButtonText}>Start Shopping</Text>
             </Pressable>
           </Link>
         </View>
@@ -40,53 +60,17 @@ export default function WishlistScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Wishlist</Text>
-        <Text style={[styles.headerCount, { color: colors.textSecondary }]}>
-          {favoriteProducts.length} {favoriteProducts.length === 1 ? 'item' : 'items'}
+        <Text style={[styles.headerCount, { color: colors.textMuted }]}>
+          {displayProducts.length} {displayProducts.length === 1 ? 'item' : 'items'}
         </Text>
       </View>
-
       <FlatList
-        data={favoriteProducts}
+        data={displayProducts}
         numColumns={2}
         showsVerticalScrollIndicator={false}
-        columnWrapperStyle={styles.productGrid}
-        contentContainerStyle={styles.scrollContent}
-        renderItem={({ item }) => (
-          <Link href={`/product/${item.slug}`} asChild>
-            <Pressable style={StyleSheet.flatten([styles.productCard, { backgroundColor: colors.surface }])}>
-              <Image source={item.image} style={styles.productImage} contentFit="contain" />
-              <View style={styles.productInfo}>
-                <Text style={[styles.productBrand, { color: colors.textSecondary }]}>{item.brand}</Text>
-                <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <View style={styles.priceRow}>
-                  {item.salePrice ? (
-                    <>
-                      <Text style={[styles.salePrice, { color: colors.danger }]}>
-                        {item.currency} {item.salePrice.toLocaleString()}
-                      </Text>
-                      <Text style={[styles.originalPrice, { color: colors.textMuted }]}>
-                        {item.currency} {item.price.toLocaleString()}
-                      </Text>
-                    </>
-                  ) : (
-                    <Text style={[styles.price, { color: colors.textPrimary }]}>
-                      {item.currency} {item.price.toLocaleString()}
-                    </Text>
-                  )}
-                </View>
-              </View>
-              <Pressable
-                style={styles.removeButton}
-                onPress={() => toggleFavorite(item)}
-                hitSlop={8}
-              >
-                <Ionicons name="close-circle" size={22} color={colors.danger} />
-              </Pressable>
-            </Pressable>
-          </Link>
-        )}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.gridContent}
+        renderItem={({ item }) => <ProductCard product={item} width={CARD_WIDTH} showWishlist />}
         keyExtractor={(item) => item.id}
       />
     </View>
@@ -111,56 +95,13 @@ const styles = StyleSheet.create({
   headerCount: {
     ...typography.body,
   },
-  scrollContent: {
+  gridContent: {
     paddingHorizontal: spacing.xl,
     paddingBottom: 120,
+  },
+  row: {
     gap: spacing.md,
-  },
-  productGrid: {
-    gap: spacing.md,
-  },
-  productCard: {
-    flex: 1,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  productImage: {
-    width: '100%',
-    height: 160,
-  },
-  productInfo: {
-    padding: spacing.md,
-  },
-  productBrand: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: spacing.xxs,
-  },
-  productName: {
-    ...typography.bodyStrong,
-    marginBottom: spacing.xs,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  price: {
-    ...typography.priceSmall,
-  },
-  salePrice: {
-    ...typography.priceSmall,
-  },
-  originalPrice: {
-    ...typography.caption,
-    textDecorationLine: 'line-through',
-  },
-  removeButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
+    marginBottom: spacing.md,
   },
   emptyContainer: {
     flex: 1,
@@ -169,12 +110,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing['3xl'],
   },
   emptyIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: radius.full,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   emptyTitle: {
     ...typography.h3,
@@ -184,12 +125,16 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     ...typography.body,
     textAlign: 'center',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
+    lineHeight: 21,
   },
   emptyButton: {
-    paddingHorizontal: spacing['2xl'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: radius.full,
+    borderRadius: radius.pill,
   },
   emptyButtonText: {
     ...typography.button,

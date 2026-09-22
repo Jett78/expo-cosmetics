@@ -13,6 +13,7 @@ export class ApiError extends Error {
 export async function apiGet<T>(
   path: string,
   params?: Record<string, string | number | undefined>,
+  token?: string,
 ): Promise<T> {
   const url = new URL(`${API_BASE_URL}${path}`);
 
@@ -24,11 +25,16 @@ export async function apiGet<T>(
     });
   }
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url.toString(), {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 
   const data = await response.json();

@@ -13,14 +13,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCommerce } from '../src/context/CommerceContext';
 import { useAppTheme } from '../src/hooks/useAppTheme';
-import { spacing, radius, typography, shadows } from '../src/design-system';
+import { spacing, radius, typography } from '../src/design-system';
+import { API_BASE_URL } from '../src/lib/config';
+
+const getImageUrl = (featureImage: string, featureImageLink?: Record<string, string>) => {
+  if (featureImageLink?.['480']) return featureImageLink['480'];
+  if (featureImage?.startsWith('http')) return featureImage;
+  return `${API_BASE_URL.replace('/v1', '')}/${featureImage}`;
+};
+
+const getItemPrice = (item: {
+  product: { price: number; offeredPrice: number; isOfferedPriceActive: boolean };
+  attributes: { productAttributeValue?: { stockAndPrice?: { price: string; offeredPrice: number | null; isOfferedPriceActive: boolean } | null } | null }[];
+}) => {
+  const priceAttr = item.attributes.find((a) => a.productAttributeValue?.stockAndPrice);
+  if (priceAttr?.productAttributeValue?.stockAndPrice) {
+    const sp = priceAttr.productAttributeValue.stockAndPrice;
+    return sp.isOfferedPriceActive && sp.offeredPrice ? sp.offeredPrice : Number(sp.price);
+  }
+  return item.product.isOfferedPriceActive && item.product.offeredPrice
+    ? item.product.offeredPrice
+    : item.product.price;
+};
 
 export default function CartScreen() {
   const { colors } = useAppTheme();
-  const { cartItems, clearCart, getCartTotal } = useCommerce();
+  const { cartItems, clearCart, getCartTotal, isAuthenticated, serverCartItems, serverCartTotal, serverCartItemCount } = useCommerce();
 
-  const isEmpty = cartItems.length === 0;
-  const total = getCartTotal();
+  const displayItems = isAuthenticated ? serverCartItems : cartItems;
+  const isEmpty = displayItems.length === 0;
+  const total = isAuthenticated ? serverCartTotal : getCartTotal();
+  const itemCount = isAuthenticated ? serverCartItemCount : cartItems.reduce((t, i) => t + i.quantity, 0);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -30,7 +53,7 @@ export default function CartScreen() {
         </Text>
         {!isEmpty && (
           <Text style={[styles.headerCount, { color: colors.textSecondary }]}>
-            {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+            {itemCount} {itemCount === 1 ? 'item' : 'items'}
           </Text>
         )}
       </View>
@@ -64,37 +87,69 @@ export default function CartScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContentContainer}
           >
-            {cartItems.map((item) => (
-              <View
-                key={item.product.id}
-                style={[styles.cartItem, { borderBottomColor: colors.borderSubtle }]}
-              >
-                <Link href={`/product/${item.product.slug}`} asChild>
-                  <TouchableOpacity style={styles.cartItemLeft}>
-                    <Image
-                      source={item.product.image}
-                      style={[styles.cartItemImage, { backgroundColor: colors.surfaceMuted }]}
-                      contentFit="cover"
-                      transition={200}
-                    />
-                    <View style={styles.cartItemDetails}>
-                      <Text
-                        style={[styles.cartItemName, { color: colors.textPrimary }]}
-                        numberOfLines={2}
-                      >
-                        {item.product.name}
-                      </Text>
-                      <Text style={[styles.cartItemPrice, { color: colors.textPrimary }]}>
-                        Rs. {(item.product.salePrice ?? item.product.price).toLocaleString()}
-                      </Text>
-                      <Text style={[styles.cartItemQty, { color: colors.textSecondary }]}>
-                        Qty: {item.quantity}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </Link>
-              </View>
-            ))}
+            {isAuthenticated
+              ? serverCartItems.map((item) => (
+                  <View
+                    key={item.id}
+                    style={[styles.cartItem, { borderBottomColor: colors.borderSubtle }]}
+                  >
+                    <Link href={`/product/${item.product.slug}`} asChild>
+                      <TouchableOpacity style={styles.cartItemLeft}>
+                        <Image
+                          source={{ uri: getImageUrl(item.product.featureImage, item.product.featureImageLink) }}
+                          style={[styles.cartItemImage, { backgroundColor: colors.surfaceMuted }]}
+                          contentFit="cover"
+                          transition={200}
+                        />
+                        <View style={styles.cartItemDetails}>
+                          <Text
+                            style={[styles.cartItemName, { color: colors.textPrimary }]}
+                            numberOfLines={2}
+                          >
+                            {item.product.name}
+                          </Text>
+                          <Text style={[styles.cartItemPrice, { color: colors.textPrimary }]}>
+                            Rs. {getItemPrice(item).toLocaleString()}
+                          </Text>
+                          <Text style={[styles.cartItemQty, { color: colors.textSecondary }]}>
+                            Qty: {item.quantity}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </Link>
+                  </View>
+                ))
+              : cartItems.map((item) => (
+                  <View
+                    key={item.product.id}
+                    style={[styles.cartItem, { borderBottomColor: colors.borderSubtle }]}
+                  >
+                    <Link href={`/product/${item.product.slug}`} asChild>
+                      <TouchableOpacity style={styles.cartItemLeft}>
+                        <Image
+                          source={item.product.image}
+                          style={[styles.cartItemImage, { backgroundColor: colors.surfaceMuted }]}
+                          contentFit="cover"
+                          transition={200}
+                        />
+                        <View style={styles.cartItemDetails}>
+                          <Text
+                            style={[styles.cartItemName, { color: colors.textPrimary }]}
+                            numberOfLines={2}
+                          >
+                            {item.product.name}
+                          </Text>
+                          <Text style={[styles.cartItemPrice, { color: colors.textPrimary }]}>
+                            Rs. {(item.product.salePrice ?? item.product.price).toLocaleString()}
+                          </Text>
+                          <Text style={[styles.cartItemQty, { color: colors.textSecondary }]}>
+                            Qty: {item.quantity}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </Link>
+                  </View>
+                ))}
           </ScrollView>
 
           <View style={[styles.summaryContainer, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
@@ -240,7 +295,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderRadius: radius.lg,
     alignItems: 'center',
-    ...shadows.md,
   },
   checkoutButtonText: {
     ...typography.button,
@@ -285,7 +339,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing['3xl'],
     paddingVertical: spacing.md,
     borderRadius: radius.pill,
-    ...shadows.md,
   },
   exploreButtonText: {
     ...typography.button,

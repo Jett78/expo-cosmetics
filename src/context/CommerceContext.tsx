@@ -3,11 +3,27 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { products as allProducts } from '../data';
 import type { Product } from '../data/products';
+import { fetchCart } from '../services/cart/api';
+import { fetchWishlist, toggleWishlist } from '../services/wishlist/api';
+import type { ApiCartItem, ApiWishlistItem } from '../types/api-cart';
 
 export type SortId = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_USER_KEY = 'auth_user';
+
+export type ServerCartItem = {
+  id: string;
+  quantity: number;
+  product: ApiCartItem['product'];
+  attributes: ApiCartItem['attributes'];
+};
+
+export type ServerWishlistItem = {
+  id: string;
+  productId: string;
+  product: ApiWishlistItem['product'];
+};
 
 type CommerceUser = {
   email: string;
@@ -56,6 +72,12 @@ type CommerceContextValue = {
   user: CommerceUser | null;
   addToWishlist: (product: Product) => void;
   removeFromWishlist: (productId: string) => void;
+  serverCartItems: ServerCartItem[];
+  serverWishlistItems: ServerWishlistItem[];
+  serverCartTotal: number;
+  serverCartItemCount: number;
+  refreshCart: () => void;
+  refreshWishlist: () => void;
 };
 
 const defaultFilters: FilterState = {
@@ -98,6 +120,45 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   const [user, setUser] = useState<CommerceUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
+  const [serverCartItems, setServerCartItems] = useState<ServerCartItem[]>([]);
+  const [serverWishlistItems, setServerWishlistItems] = useState<ServerWishlistItem[]>([]);
+
+  const refreshCart = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetchCart(token);
+      if (res.cart?.items) {
+        setServerCartItems(
+          res.cart.items.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            product: item.product,
+            attributes: item.attributes,
+          }))
+        );
+      }
+    } catch {
+      // silently fail
+    }
+  }, [token]);
+
+  const refreshWishlist = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetchWishlist(token);
+      if (res.wishlists) {
+        setServerWishlistItems(
+          res.wishlists.map((w) => ({
+            id: w.id,
+            productId: w.productId,
+            product: w.product,
+          }))
+        );
+      }
+    } catch {
+      // silently fail
+    }
+  }, [token]);
 
   useEffect(() => {
     const loadAuth = async () => {
@@ -116,6 +177,16 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     };
     loadAuth();
   }, []);
+
+  useEffect(() => {
+    if (token) {
+      refreshCart();
+      refreshWishlist();
+    } else {
+      setServerCartItems([]);
+      setServerWishlistItems([]);
+    }
+  }, [token, refreshCart, refreshWishlist]);
 
   const favoriteProducts = useMemo(
     () => allProducts.filter((product) => favoriteIds.includes(product.id)),
@@ -188,13 +259,32 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   }, [cartItems]);
 
-  const toggleFavorite = useCallback((product: Product) => {
-    setFavoriteIds((currentIds) =>
-      currentIds.includes(product.id)
-        ? currentIds.filter((id) => id !== product.id)
-        : [...currentIds, product.id]
-    );
-  }, []);
+  const toggleFavorite = useCallback(
+    async (product: Product) => {
+      // Optimistic local update
+      setFavoriteIds((currentIds) =>
+        currentIds.includes(product.id)
+          ? currentIds.filter((id) => id !== product.id)
+          : [...currentIds, product.id]
+      );
+
+      // Call API if authenticated
+      if (token) {
+        try {
+          await toggleWishlist(product.id, token);
+          await refreshWishlist();
+        } catch {
+          // Revert on failure
+          setFavoriteIds((currentIds) =>
+            currentIds.includes(product.id)
+              ? currentIds.filter((id) => id !== product.id)
+              : [...currentIds, product.id]
+          );
+        }
+      }
+    },
+    [token, refreshWishlist]
+  );
 
   const addToWishlist = useCallback((product: Product) => {
     setFavoriteIds((currentIds) =>
@@ -218,6 +308,27 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
   }, []);
+
+  const serverCartTotal = useMemo(() => {
+    return serverCartItems.reduce((total, item) => {
+      const priceAttr = item.attributes.find((a) => a.productAttributeValue?.stockAndPrice);
+      if (priceAttr?.productAttributeValue?.stockAndPrice) {
+        const sp = priceAttr.productAttributeValue.stockAndPrice;
+        const effectivePrice =
+          sp.isOfferedPriceActive && sp.offeredPrice ? sp.offeredPrice : Number(sp.price);
+        return total + effectivePrice * item.quantity;
+      }
+      const productPrice =
+        item.product.isOfferedPriceActive && item.product.offeredPrice
+          ? item.product.offeredPrice
+          : item.product.price;
+      return total + productPrice * item.quantity;
+    }, 0);
+  }, [serverCartItems]);
+
+  const serverCartItemCount = useMemo(() => {
+    return serverCartItems.reduce((total, item) => total + item.quantity, 0);
+  }, [serverCartItems]);
 
   const value = useMemo<CommerceContextValue>(
     () => ({
@@ -255,6 +366,8 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         setToken(null);
         setCartItems([]);
         setFavoriteIds([]);
+        setServerCartItems([]);
+        setServerWishlistItems([]);
         setCheckoutComplete(false);
         SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {});
         SecureStore.deleteItemAsync(AUTH_USER_KEY).catch(() => {});
@@ -276,6 +389,12 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
       },
       token,
+      serverCartItems,
+      serverWishlistItems,
+      serverCartTotal,
+      serverCartItemCount,
+      refreshCart,
+      refreshWishlist,
       resetCheckout: () => setCheckoutComplete(false),
       resetFilters,
       applyFilters,
@@ -302,6 +421,12 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       toggleFavorite,
       user,
       token,
+      serverCartItems,
+      serverWishlistItems,
+      serverCartTotal,
+      serverCartItemCount,
+      refreshCart,
+      refreshWishlist,
       addToWishlist,
       removeFromWishlist,
       applyFilters,
