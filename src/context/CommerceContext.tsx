@@ -88,6 +88,9 @@ type CommerceContextValue = {
   serverWishlistItemCount: number;
   refreshCart: () => void;
   refreshWishlist: () => void;
+  loginModalVisible: boolean;
+  showLoginModal: () => void;
+  hideLoginModal: () => void;
 };
 
 const defaultFilters: FilterState = {
@@ -132,6 +135,10 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   const [authLoaded, setAuthLoaded] = useState(false);
   const [serverCartItems, setServerCartItems] = useState<ServerCartItem[]>([]);
   const [serverWishlistItems, setServerWishlistItems] = useState<ServerWishlistItem[]>([]);
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
+
+  const showLoginModal = useCallback(() => setLoginModalVisible(true), []);
+  const hideLoginModal = useCallback(() => setLoginModalVisible(false), []);
 
   const refreshCart = useCallback(async () => {
     if (!token) return;
@@ -234,6 +241,11 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     quantity = 1,
     attributeIds: string[] = []
   ) => {
+    if (!token) {
+      setLoginModalVisible(true);
+      return;
+    }
+
     const previousItems = cartItems;
 
     setCartItems((currentItems) => {
@@ -256,23 +268,21 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     });
     setCheckoutComplete(false);
 
-    if (token) {
-      try {
-        const price = product.salePrice ?? product.price;
-        const total = price * quantity;
-        const isOfferActive = product.salePrice != null && product.salePrice < product.price;
+    try {
+      const price = product.salePrice ?? product.price;
+      const total = price * quantity;
+      const isOfferActive = product.salePrice != null && product.salePrice < product.price;
 
-        await addToCartMutation.mutateAsync({
-          productId: product.id,
-          quantity,
-          total,
-          attributeIds,
-          isOfferActive,
-        });
-        await refreshCart();
-      } catch {
-        setCartItems(previousItems);
-      }
+      await addToCartMutation.mutateAsync({
+        productId: product.id,
+        quantity,
+        total,
+        attributeIds,
+        isOfferActive,
+      });
+      await refreshCart();
+    } catch {
+      setCartItems(previousItems);
     }
   }, [token, refreshCart, cartItems, addToCartMutation]);
 
@@ -315,6 +325,11 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
 
   const toggleFavorite = useCallback(
     async (product: Product) => {
+      if (!token) {
+        setLoginModalVisible(true);
+        return;
+      }
+
       // Optimistic local update
       setFavoriteIds((currentIds) =>
         currentIds.includes(product.id)
@@ -323,18 +338,16 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       );
 
       // Call API if authenticated
-      if (token) {
-        try {
-          await toggleWishlist(product.id, token);
-          await refreshWishlist();
-        } catch {
-          // Revert on failure
-          setFavoriteIds((currentIds) =>
-            currentIds.includes(product.id)
-              ? currentIds.filter((id) => id !== product.id)
-              : [...currentIds, product.id]
-          );
-        }
+      try {
+        await toggleWishlist(product.id, token);
+        await refreshWishlist();
+      } catch {
+        // Revert on failure
+        setFavoriteIds((currentIds) =>
+          currentIds.includes(product.id)
+            ? currentIds.filter((id) => id !== product.id)
+            : [...currentIds, product.id]
+        );
       }
     },
     [token, refreshWishlist]
@@ -461,6 +474,9 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       user,
       addToWishlist,
       removeFromWishlist,
+      loginModalVisible,
+      showLoginModal,
+      hideLoginModal,
     }),
     [
       addToCart,
@@ -489,6 +505,9 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       removeFromWishlist,
       applyFilters,
       resetFilters,
+      showLoginModal,
+      hideLoginModal,
+      loginModalVisible,
     ]
   );
 

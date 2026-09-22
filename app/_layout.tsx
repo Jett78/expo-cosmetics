@@ -17,6 +17,14 @@ import { TabBarVisibilityProvider } from '../src/context/TabBarVisibilityContext
 import { lightColors } from '../src/design-system';
 import QueryProvider from '../src/providers/QueryProvider';
 import { useMemo } from 'react';
+import LoginModal from '../src/components/LoginModal';
+import { useCommerce } from '../src/context/CommerceContext';
+
+function LoginModalWrapper() {
+  const { loginModalVisible, hideLoginModal } = useCommerce();
+
+  return <LoginModal visible={loginModalVisible} onClose={hideLoginModal} />;
+}
 
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = 'light' as const;
@@ -80,6 +88,7 @@ export default function RootLayout() {
                   }}
                 />
                 <StatusBar style="auto" />
+                <LoginModalWrapper />
               </AppThemeProvider>
             </TabBarVisibilityProvider>
           </CommerceProvider>
