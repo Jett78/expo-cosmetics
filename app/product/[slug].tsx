@@ -223,18 +223,24 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(
-      {
-        id: product.id,
-        name: product.name,
-        price: displayPrice,
-        image: { uri: imageUrls[0] },
-        brand: product.brand?.name ?? '',
-        category: product.category?.name ?? '',
-        categoryId: product.categoryId,
-      } as any,
-      quantity,
-    );
+
+    const attributeIds = Object.values(selectedAttributes)
+      .filter(Boolean)
+      .map((attrId) => {
+        const attr = product.attributes.find((a) => a.id === attrId);
+        return attr?.stockAndPrice?.productAttributeValueId || attrId;
+      })
+      .filter(Boolean);
+
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: originalPrice,
+      salePrice: displayPrice < originalPrice ? displayPrice : undefined,
+      slug: product.slug,
+      image: imageUrls[0] ?? '',
+    }, quantity, attributeIds);
+
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };

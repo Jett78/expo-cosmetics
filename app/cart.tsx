@@ -36,9 +36,18 @@ const getItemPrice = (item: {
     : item.product.price;
 };
 
+import { Alert } from 'react-native';
+
 export default function CartScreen() {
   const { colors } = useAppTheme();
-  const { cartItems, clearCart, getCartTotal, isAuthenticated, serverCartItems, serverCartTotal, serverCartItemCount } = useCommerce();
+  const { cartItems, clearCart, getCartTotal, isAuthenticated, removeFromCart, serverCartItems, serverCartTotal, serverCartItemCount } = useCommerce();
+
+  const handleRemove = (id: string) => {
+    Alert.alert('Remove item', 'Are you sure you want to remove this item from your bag?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeFromCart(id) },
+    ]);
+  };
 
   const displayItems = isAuthenticated ? serverCartItems : cartItems;
   const isEmpty = displayItems.length === 0;
@@ -117,6 +126,9 @@ export default function CartScreen() {
                         </View>
                       </TouchableOpacity>
                     </Link>
+                    <TouchableOpacity style={styles.cartItemDelete} onPress={() => handleRemove(item.id)}>
+                      <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
                 ))
               : cartItems.map((item) => (
@@ -148,6 +160,9 @@ export default function CartScreen() {
                         </View>
                       </TouchableOpacity>
                     </Link>
+                    <TouchableOpacity style={styles.cartItemDelete} onPress={() => handleRemove(item.product.id)}>
+                      <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
                 ))}
           </ScrollView>
@@ -233,11 +248,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
   },
   cartItemLeft: {
     flexDirection: 'row',
     flex: 1,
     gap: spacing.md,
+  },
+  cartItemDelete: {
+    padding: spacing.sm,
+    marginLeft: spacing.sm,
   },
   cartItemImage: {
     width: 80,

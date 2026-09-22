@@ -1,11 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 
 import { products as allProducts } from '../data';
 import type { Product } from '../data/products';
-import { fetchCart } from '../services/cart/api';
+import { addToCart as addToCartApi, fetchCart, deleteCartItem } from '../services/cart/api';
 import { fetchWishlist, toggleWishlist } from '../services/wishlist/api';
-import type { ApiCartItem, ApiWishlistItem } from '../types/api-cart';
+import type { ApiCartItem, ApiWishlistItem, AddToCartRequest, DeleteCartItemResponse } from '../types/api-cart';
 
 export type SortId = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular';
 
@@ -30,11 +31,19 @@ type CommerceUser = {
   name: string;
 };
 
+type CartProduct = {
+  id: string;
+  name: string;
+  price: number;
+  salePrice?: number;
+  slug: string;
+  image: number | string;
+};
+
 type CartItem = {
-  product: Product;
+  product: CartProduct;
   quantity: number;
-  selectedShade?: string;
-  selectedSize?: string;
+  attributeIds: string[];
 };
 
 type FilterState = {
@@ -44,7 +53,7 @@ type FilterState = {
 };
 
 type CommerceContextValue = {
-  addToCart: (product: Product, quantity?: number, shade?: string, size?: string) => void;
+  addToCart: (product: CartProduct, quantity?: number, attributeIds?: string[]) => void;
   removeFromCart: (productId: string) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   cartItems: CartItem[];
@@ -76,6 +85,7 @@ type CommerceContextValue = {
   serverWishlistItems: ServerWishlistItem[];
   serverCartTotal: number;
   serverCartItemCount: number;
+  serverWishlistItemCount: number;
   refreshCart: () => void;
   refreshWishlist: () => void;
 };
@@ -211,13 +221,26 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     return sortProducts(nextProducts, sortId);
   }, [filters, sortId]);
 
-  const addToCart = useCallback((product: Product, quantity = 1, shade?: string, size?: string) => {
+  const addToCartMutation = useMutation({
+    mutationFn: (payload: AddToCartRequest) => addToCartApi(token as string, payload),
+  });
+
+  const deleteCartItemMutation = useMutation({
+    mutationFn: (cartItemId: string) => deleteCartItem(token as string, cartItemId),
+  });
+
+  const addToCart = useCallback(async (
+    product: CartProduct,
+    quantity = 1,
+    attributeIds: string[] = []
+  ) => {
+    const previousItems = cartItems;
+
     setCartItems((currentItems) => {
       const existingIndex = currentItems.findIndex(
         (item) =>
           item.product.id === product.id &&
-          item.selectedShade === shade &&
-          item.selectedSize === size
+          JSON.stringify(item.attributeIds) === JSON.stringify(attributeIds)
       );
 
       if (existingIndex >= 0) {
@@ -229,14 +252,45 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         return updated;
       }
 
-      return [...currentItems, { product, quantity, selectedShade: shade, selectedSize: size }];
+      return [...currentItems, { product, quantity, attributeIds }];
     });
     setCheckoutComplete(false);
-  }, []);
 
-  const removeFromCart = useCallback((productId: string) => {
-    setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
-  }, []);
+    if (token) {
+      try {
+        const price = product.salePrice ?? product.price;
+        const total = price * quantity;
+        const isOfferActive = product.salePrice != null && product.salePrice < product.price;
+
+        await addToCartMutation.mutateAsync({
+          productId: product.id,
+          quantity,
+          total,
+          attributeIds,
+          isOfferActive,
+        });
+        await refreshCart();
+      } catch {
+        setCartItems(previousItems);
+      }
+    }
+  }, [token, refreshCart, cartItems, addToCartMutation]);
+
+  const removeFromCart = useCallback(async (cartItemId: string) => {
+    if (token) {
+      const previousServerItems = serverCartItems;
+      setServerCartItems((current) => current.filter((item) => item.id !== cartItemId));
+
+      try {
+        await deleteCartItemMutation.mutateAsync(cartItemId);
+        await refreshCart();
+      } catch {
+        setServerCartItems(previousServerItems);
+      }
+    } else {
+      setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== cartItemId));
+    }
+  }, [token, serverCartItems, deleteCartItemMutation, refreshCart]);
 
   const updateCartQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -330,6 +384,8 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     return serverCartItems.reduce((total, item) => total + item.quantity, 0);
   }, [serverCartItems]);
 
+  const serverWishlistItemCount = useMemo(() => serverWishlistItems.length, [serverWishlistItems]);
+
   const value = useMemo<CommerceContextValue>(
     () => ({
       addToCart,
@@ -393,6 +449,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       serverWishlistItems,
       serverCartTotal,
       serverCartItemCount,
+      serverWishlistItemCount,
       refreshCart,
       refreshWishlist,
       resetCheckout: () => setCheckoutComplete(false),
@@ -425,6 +482,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       serverWishlistItems,
       serverCartTotal,
       serverCartItemCount,
+      serverWishlistItemCount,
       refreshCart,
       refreshWishlist,
       addToWishlist,

@@ -13,11 +13,22 @@ import { useAppTheme } from '../src/hooks/useAppTheme';
 import { radius, spacing, typography } from '../src/design-system';
 
 export default function CheckoutScreen() {
-  const { cartItems, getCartTotal, checkout, checkoutComplete } = useCommerce();
+  const { cartItems, serverCartItems, isAuthenticated, getCartTotal, checkout, checkoutComplete } = useCommerce();
   const { colors } = useAppTheme();
   const [orderPlaced, setOrderPlaced] = useState(checkoutComplete);
 
-  const subtotal = getCartTotal();
+  const activeItems = isAuthenticated ? serverCartItems : cartItems;
+
+  const getItemPrice = (item: { product: { price: number; salePrice?: number; offeredPrice?: number; isOfferedPriceActive?: boolean } } & { quantity: number }) => {
+    const p = item.product;
+    const effectivePrice = p.isOfferedPriceActive && p.offeredPrice ? p.offeredPrice : (p.salePrice ?? p.price);
+    return effectivePrice * item.quantity;
+  };
+
+  const subtotal = isAuthenticated
+    ? serverCartItems.reduce((total, item) => total + getItemPrice(item), 0)
+    : getCartTotal();
+
   const delivery = subtotal > 0 ? 5 : 0;
   const total = subtotal + delivery;
 
@@ -60,7 +71,7 @@ export default function CheckoutScreen() {
       </View>
 
       <FlatList
-        data={cartItems}
+        data={activeItems as any[]}
         keyExtractor={(_, index) => String(index)}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -81,12 +92,12 @@ export default function CheckoutScreen() {
               </Text>
             </View>
             <Text style={[styles.itemPrice, { color: colors.textPrimary }]}>
-              Rs. {((item.product.salePrice ?? item.product.price) * item.quantity).toLocaleString()}
+              Rs. {getItemPrice(item).toLocaleString()}
             </Text>
           </View>
         )}
         ListFooterComponent={
-          cartItems.length > 0 ? (
+          activeItems.length > 0 ? (
             <View style={[styles.summaryCard, { backgroundColor: colors.surface }]}>
               <View style={styles.summaryRow}>
                 <Text style={{ color: colors.textSecondary, ...typography.body }}>Subtotal</Text>
@@ -112,7 +123,7 @@ export default function CheckoutScreen() {
         }
       />
 
-      {cartItems.length > 0 && (
+      {activeItems.length > 0 && (
         <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.accent }]}

@@ -120,9 +120,31 @@ export type ApiCart = {
   items: ApiCartItem[];
 };
 
+export type AddToCartRequest = {
+  productId: string;
+  quantity: number;
+  total: number;
+  attributeIds: string[];
+  isOfferActive: boolean;
+};
+
+export type AddToCartResponse = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  item: ApiCartItem;
+};
+
 export type ApiCartResponse = {
   success: boolean;
   statusCode: number;
   message: string;
   cart: ApiCart;
+};
+
+export type DeleteCartItemResponse = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: null;
 };

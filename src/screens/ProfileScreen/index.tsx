@@ -8,7 +8,7 @@ import { useCommerce } from '../../context/CommerceContext';
 import { spacing, typography } from '../../design-system';
 
 const Profile = ({ navigation }) => {
-  const { cartItems, favoriteProducts, logout, user } = useCommerce();
+  const { cartItems, favoriteProducts, isAuthenticated, serverWishlistItems, logout, user } = useCommerce();
 
   return (
     <View style={styles.container}>
@@ -23,7 +23,7 @@ const Profile = ({ navigation }) => {
           <Text h4>Bag items</Text>
         </View>
         <View>
-          <Text style={styles.statValue}>{favoriteProducts.length}</Text>
+          <Text style={styles.statValue}>{isAuthenticated ? serverWishlistItems.length : favoriteProducts.length}</Text>
           <Text h4>Favorites</Text>
         </View>
       </ThemedSurface>

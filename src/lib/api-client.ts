@@ -80,3 +80,33 @@ export async function apiPost<T>(
 
   return data as T;
 }
+
+export async function apiDelete<T>(
+  path: string,
+  token?: string,
+): Promise<T> {
+  const url = `${API_BASE_URL}${path}`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(
+      data.message ?? `Request failed with status ${response.status}`,
+      response.status,
+    );
+  }
+
+  return data as T;
+}

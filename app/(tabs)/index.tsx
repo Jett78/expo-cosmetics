@@ -42,9 +42,9 @@ import {
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
-  const { getCartItemCount, favoriteProducts } = useCommerce();
-  const cartCount = getCartItemCount();
-  const wishlistCount = favoriteProducts.length;
+  const { getCartItemCount, favoriteProducts, isAuthenticated, serverCartItemCount, serverWishlistItemCount } = useCommerce();
+  const cartCount = isAuthenticated ? serverCartItemCount : getCartItemCount();
+  const wishlistCount = isAuthenticated ? serverWishlistItemCount : favoriteProducts.length;
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: featuredProducts, isLoading: featuredLoading } = useFeaturedProducts();

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
-import { Link } from 'expo-router';
-import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Link, router } from 'expo-router';
+import { Dimensions, FlatList, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import ProductCard from '../../src/components/ProductCard/Card';
 import { useCommerce } from '../../src/context/CommerceContext';
@@ -31,6 +31,13 @@ export default function WishlistScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+            activeOpacity={0.6}
+          >
+            <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Wishlist</Text>
         </View>
         <View style={styles.emptyContainer}>
@@ -59,6 +66,13 @@ export default function WishlistScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+          activeOpacity={0.6}
+        >
+          <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Wishlist</Text>
         <Text style={[styles.headerCount, { color: colors.textMuted }]}>
           {displayProducts.length} {displayProducts.length === 1 ? 'item' : 'items'}
@@ -86,7 +100,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing['5xl'],
     paddingBottom: spacing.lg,
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     gap: spacing.md,
   },
   headerTitle: {
@@ -94,6 +108,13 @@ const styles = StyleSheet.create({
   },
   headerCount: {
     ...typography.body,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gridContent: {
     paddingHorizontal: spacing.xl,
