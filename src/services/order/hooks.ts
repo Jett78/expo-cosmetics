@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchOrderById, fetchUserOrders } from './api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CreateOrderPayload } from '../../types/order';
+import { createOrder, fetchOrderById, fetchUserOrders } from './api';
 
 const ORDERS_STALE_TIME = 2 * 60 * 1000;
 
@@ -20,5 +21,17 @@ export function useOrderById(orderId: string, token: string | null) {
     enabled: Boolean(token) && Boolean(orderId),
     staleTime: ORDERS_STALE_TIME,
     select: (data) => data.order,
+  });
+}
+
+export function useCreateOrder(token: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateOrderPayload) => createOrder(token as string, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
   });
 }

@@ -2,12 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { Link } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Skeleton } from '../../src/components/Skeleton';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
+import { resolveAvatarUrl } from '../../src/services/auth/api';
+import { useUserDetails } from '../../src/services/auth/hooks';
 
 type MenuItem = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -16,10 +19,10 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
+  { icon: 'key-outline', label: 'Change Password', href: '/account/change-password' },
   { icon: 'receipt-outline', label: 'My Orders', href: '/orders' },
   { icon: 'heart-outline', label: 'Wishlist', href: '/(tabs)/wishlist' },
-  { icon: 'location-outline', label: 'Addresses' },
-  { icon: 'settings-outline', label: 'Settings' },
+  { icon: 'location-outline', label: 'Addresses', href: '/checkout/address' },
   { icon: 'help-circle-outline', label: 'Help' },
 ];
 
@@ -31,7 +34,18 @@ const guestMenuItems: MenuItem[] = [
 
 export default function AccountScreen() {
   const { colors } = useAppTheme();
-  const { user, logout, isAuthenticated } = useCommerce();
+  const { user, logout, isAuthenticated, token, updateUser } = useCommerce();
+  const { data: profile, isPending: profileLoading } = useUserDetails(token);
+
+  const profileAvatar = resolveAvatarUrl(profile?.avatar, profile?.avatarLink);
+
+  React.useEffect(() => {
+    if (!profile) return;
+    const resolved = resolveAvatarUrl(profile.avatar, profile.avatarLink);
+    if (resolved !== user?.avatar || profile.name !== user?.name || profile.email !== user?.email) {
+      updateUser(profile.name, profile.email, resolved);
+    }
+  }, [profile, user?.avatar, user?.name, user?.email, updateUser]);
 
   if (!isAuthenticated) {
     return (
@@ -119,8 +133,8 @@ export default function AccountScreen() {
     );
   }
 
-  const userName = user?.name ?? 'Guest';
-  const userEmail = user?.email ?? 'guest@example.com';
+  const userName = profile?.name || user?.name || 'Guest';
+  const userEmail = profile?.email || user?.email || 'guest@example.com';
   const initials = userName
     .split(' ')
     .map((n) => n[0])
@@ -140,15 +154,58 @@ export default function AccountScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
-          <View style={[styles.avatar, { backgroundColor: colors.accentLight }]}>
-            <Text style={[styles.avatarText, { color: colors.accent }]}>{initials}</Text>
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.textPrimary }]}>{userName}</Text>
-            <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>{userEmail}</Text>
-          </View>
-        </View>
+        <Link href='/account/edit-profile' asChild>
+          <TouchableOpacity
+            style={StyleSheet.flatten([styles.profileCard, { backgroundColor: colors.surface }])}
+            activeOpacity={0.75}
+            accessibilityLabel='Edit profile'
+          >
+            {profileLoading ? (
+              <>
+                <Skeleton width={60} height={60} borderRadius={30} />
+                <View style={styles.profileInfo}>
+                  <Skeleton width='55%' height={16} borderRadius={4} />
+                  <Skeleton
+                    width='75%'
+                    height={12}
+                    borderRadius={4}
+                    style={{ marginTop: spacing.xs }}
+                  />
+                </View>
+                <Ionicons name='chevron-forward' size={18} color={colors.textSecondary} />
+              </>
+            ) : (
+              <>
+                {(profileAvatar ?? user?.avatar) ? (
+                  <Image
+                    source={{ uri: (profileAvatar ?? user?.avatar) as string }}
+                    style={styles.avatarImage}
+                    accessibilityLabel='Profile photo'
+                  />
+                ) : (
+                  <View style={[styles.avatar, { backgroundColor: colors.accentLight }]}>
+                    <Text style={[styles.avatarText, { color: colors.accent }]}>{initials}</Text>
+                  </View>
+                )}
+                <View style={styles.profileInfo}>
+                  <Text
+                    style={[styles.profileName, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {userName}
+                  </Text>
+                  <Text
+                    style={[styles.profileEmail, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {userEmail}
+                  </Text>
+                </View>
+                <Ionicons name='create-outline' size={22} color={colors.accent} />
+              </>
+            )}
+          </TouchableOpacity>
+        </Link>
 
         <View style={[styles.menuSection, { backgroundColor: colors.surface }]}>
           {menuItems.map((item, index) => {
@@ -248,6 +305,13 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     ...typography.h2,
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: spacing.lg,
+    backgroundColor: 'rgba(45, 37, 32, 0.04)',
   },
   profileInfo: {
     flex: 1,

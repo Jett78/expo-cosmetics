@@ -26,6 +26,7 @@ import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useGoogleAuthMutation, useLoginMutation } from '../../src/services/auth/hooks';
+import { resolveAvatarUrl } from '../../src/services/auth/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -60,7 +61,12 @@ export default function LoginScreen() {
         { idToken: id_token },
         {
           onSuccess: (data) => {
-            login(data.data.email, data.data.name, data.data.token);
+            login(
+              data.data.email,
+              data.data.name,
+              data.data.token,
+              resolveAvatarUrl(data.data.avatar, data.data.avatarLink)
+            );
             router.replace('/(tabs)');
           },
           onError: (error: any) => {
@@ -74,7 +80,12 @@ export default function LoginScreen() {
   const handleLogin = (values: { email: string; password: string }) => {
     loginMutation.mutate(values, {
       onSuccess: (data) => {
-        login(data.data.email, data.data.name, data.data.token);
+        login(
+          data.data.email,
+          data.data.name,
+          data.data.token,
+          resolveAvatarUrl(data.data.avatar, data.data.avatarLink)
+        );
         router.replace('/(tabs)');
       },
       onError: (error: any) => {
@@ -91,7 +102,11 @@ export default function LoginScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.headerGradient}
       >
-        <TouchableOpacity style={styles.backButton} activeOpacity={0.7} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          activeOpacity={0.7}
+          onPress={() => router.back()}
+        >
           <Ionicons name='arrow-back' size={22} color='rgba(255,255,255,0.9)' />
         </TouchableOpacity>
 

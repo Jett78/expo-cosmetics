@@ -137,3 +137,31 @@ export type ApiOrderDetailResponse = {
   message: string;
   order: ApiOrder;
 };
+
+export type CreateOrderItemInput = {
+  productId: string;
+  quantity: number;
+  price: number;
+  attributeIds: string[];
+  isOfferActive: boolean;
+};
+
+export type CreateOrderPayload = {
+  shippingAddress: string;
+  billingAddress: string;
+  shippingMethod: string;
+  totalAmount: number;
+  deliveryDate: string;
+  deliveryPrice: number;
+  notes: string;
+  items: CreateOrderItemInput[];
+  cartId: string;
+  isOfferActive: boolean;
+};
+
+export type CreateOrderResponse = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  order?: ApiOrder;
+};
