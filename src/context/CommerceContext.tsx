@@ -1,12 +1,19 @@
+import { useMutation } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 
 import { products as allProducts } from '../data';
 import type { Product } from '../data/products';
-import { addToCart as addToCartApi, fetchCart, deleteCartItem } from '../services/cart/api';
+import { queryClient } from '../providers/QueryProvider';
+import { addToCart as addToCartApi, deleteCartItem, fetchCart } from '../services/cart/api';
 import { fetchWishlist, toggleWishlist } from '../services/wishlist/api';
-import type { ApiCartItem, ApiWishlistItem, AddToCartRequest, DeleteCartItemResponse } from '../types/api-cart';
+import type {
+  AddToCartRequest,
+  ApiCartItem,
+  ApiWishlistItem,
+  DeleteCartItemResponse,
+} from '../types/api-cart';
+import type { ShippingAddress } from '../types/shipping-address';
 
 export type SortId = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular';
 
@@ -29,6 +36,7 @@ export type ServerWishlistItem = {
 type CommerceUser = {
   email: string;
   name: string;
+  avatar?: string | null;
 };
 
 type CartProduct = {
@@ -66,11 +74,13 @@ type CommerceContextValue = {
   getCartTotal: () => number;
   getCartItemCount: () => number;
   isAuthenticated: boolean;
+  authLoaded: boolean;
   isFavorite: (productId: string) => boolean;
-  login: (email: string, name: string, authToken?: string) => void;
+  login: (email: string, name: string, authToken?: string, avatar?: string | null) => void;
   logout: () => void;
   register: (email: string, name: string, token?: string) => void;
   googleLogin: (name: string, email: string, token: string) => void;
+  updateUser: (name: string, email: string, avatar?: string | null) => void;
   token: string | null;
   resetCheckout: () => void;
   resetFilters: () => void;
@@ -91,6 +101,8 @@ type CommerceContextValue = {
   loginModalVisible: boolean;
   showLoginModal: () => void;
   hideLoginModal: () => void;
+  selectedShippingAddress: ShippingAddress | null;
+  setSelectedShippingAddress: (address: ShippingAddress | null) => void;
 };
 
 const defaultFilters: FilterState = {
@@ -136,9 +148,27 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   const [serverCartItems, setServerCartItems] = useState<ServerCartItem[]>([]);
   const [serverWishlistItems, setServerWishlistItems] = useState<ServerWishlistItem[]>([]);
   const [loginModalVisible, setLoginModalVisible] = useState(false);
+  const [selectedShippingAddress, setSelectedShippingAddressState] =
+    useState<ShippingAddress | null>(null);
+
+  const setSelectedShippingAddress = useCallback((address: ShippingAddress | null) => {
+    setSelectedShippingAddressState(address);
+  }, []);
 
   const showLoginModal = useCallback(() => setLoginModalVisible(true), []);
   const hideLoginModal = useCallback(() => setLoginModalVisible(false), []);
+
+  const updateUser = useCallback((name: string, email: string, avatar?: string | null) => {
+    setUser((prev) => {
+      const userData = {
+        email,
+        name,
+        avatar: avatar !== undefined ? avatar : prev?.avatar,
+      };
+      SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
+      return userData;
+    });
+  }, []);
 
   const refreshCart = useCallback(async () => {
     if (!token) return;
@@ -236,71 +266,75 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     mutationFn: (cartItemId: string) => deleteCartItem(token as string, cartItemId),
   });
 
-  const addToCart = useCallback(async (
-    product: CartProduct,
-    quantity = 1,
-    attributeIds: string[] = []
-  ) => {
-    if (!token) {
-      setLoginModalVisible(true);
-      return;
-    }
-
-    const previousItems = cartItems;
-
-    setCartItems((currentItems) => {
-      const existingIndex = currentItems.findIndex(
-        (item) =>
-          item.product.id === product.id &&
-          JSON.stringify(item.attributeIds) === JSON.stringify(attributeIds)
-      );
-
-      if (existingIndex >= 0) {
-        const updated = [...currentItems];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + quantity,
-        };
-        return updated;
+  const addToCart = useCallback(
+    async (product: CartProduct, quantity = 1, attributeIds: string[] = []) => {
+      if (!token) {
+        setLoginModalVisible(true);
+        return;
       }
 
-      return [...currentItems, { product, quantity, attributeIds }];
-    });
-    setCheckoutComplete(false);
+      const previousItems = cartItems;
 
-    try {
-      const price = product.salePrice ?? product.price;
-      const total = price * quantity;
-      const isOfferActive = product.salePrice != null && product.salePrice < product.price;
+      setCartItems((currentItems) => {
+        const existingIndex = currentItems.findIndex(
+          (item) =>
+            item.product.id === product.id &&
+            JSON.stringify(item.attributeIds) === JSON.stringify(attributeIds)
+        );
 
-      await addToCartMutation.mutateAsync({
-        productId: product.id,
-        quantity,
-        total,
-        attributeIds,
-        isOfferActive,
+        if (existingIndex >= 0) {
+          const updated = [...currentItems];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: updated[existingIndex].quantity + quantity,
+          };
+          return updated;
+        }
+
+        return [...currentItems, { product, quantity, attributeIds }];
       });
-      await refreshCart();
-    } catch {
-      setCartItems(previousItems);
-    }
-  }, [token, refreshCart, cartItems, addToCartMutation]);
-
-  const removeFromCart = useCallback(async (cartItemId: string) => {
-    if (token) {
-      const previousServerItems = serverCartItems;
-      setServerCartItems((current) => current.filter((item) => item.id !== cartItemId));
+      setCheckoutComplete(false);
 
       try {
-        await deleteCartItemMutation.mutateAsync(cartItemId);
+        const price = product.salePrice ?? product.price;
+        const total = price * quantity;
+        const isOfferActive = product.salePrice != null && product.salePrice < product.price;
+
+        await addToCartMutation.mutateAsync({
+          productId: product.id,
+          quantity,
+          total,
+          attributeIds,
+          isOfferActive,
+        });
         await refreshCart();
       } catch {
-        setServerCartItems(previousServerItems);
+        setCartItems(previousItems);
       }
-    } else {
-      setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== cartItemId));
-    }
-  }, [token, serverCartItems, deleteCartItemMutation, refreshCart]);
+    },
+    [token, refreshCart, cartItems, addToCartMutation]
+  );
+
+  const removeFromCart = useCallback(
+    async (cartItemId: string) => {
+      if (token) {
+        const previousServerItems = serverCartItems;
+        setServerCartItems((current) => current.filter((item) => item.id !== cartItemId));
+
+        try {
+          await deleteCartItemMutation.mutateAsync(cartItemId);
+          await refreshCart();
+        } catch {
+          setServerCartItems(previousServerItems);
+        }
+      } else {
+        setCartItems((currentItems) =>
+          currentItems.filter((item) => item.product.id !== cartItemId)
+        );
+      }
+    },
+    [token, serverCartItems, deleteCartItemMutation, refreshCart]
+  );
 
   const updateCartQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -420,9 +454,11 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       getCartTotal,
       getCartItemCount,
       isAuthenticated: Boolean(user),
+      authLoaded,
       isFavorite,
-      login: (email, name, authToken) => {
-        const userData = { email, name };
+      login: (email, name, authToken, avatar) => {
+        const userData: CommerceUser =
+          avatar !== undefined ? { email, name, avatar } : { email, name };
         setUser(userData);
         if (authToken) {
           setToken(authToken);
@@ -438,6 +474,8 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         setServerCartItems([]);
         setServerWishlistItems([]);
         setCheckoutComplete(false);
+        setSelectedShippingAddressState(null);
+        queryClient.removeQueries({ queryKey: ['profile'] });
         SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {});
         SecureStore.deleteItemAsync(AUTH_USER_KEY).catch(() => {});
       },
@@ -457,6 +495,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
         SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
       },
+      updateUser,
       token,
       serverCartItems,
       serverWishlistItems,
@@ -477,6 +516,8 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       loginModalVisible,
       showLoginModal,
       hideLoginModal,
+      selectedShippingAddress,
+      setSelectedShippingAddress,
     }),
     [
       addToCart,
@@ -493,6 +534,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       sortId,
       toggleFavorite,
       user,
+      authLoaded,
       token,
       serverCartItems,
       serverWishlistItems,
@@ -508,6 +550,9 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       showLoginModal,
       hideLoginModal,
       loginModalVisible,
+      updateUser,
+      selectedShippingAddress,
+      setSelectedShippingAddress,
     ]
   );
 

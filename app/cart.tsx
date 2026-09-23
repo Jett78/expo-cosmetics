@@ -8,7 +8,7 @@ import {
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCommerce } from '../src/context/CommerceContext';
@@ -197,6 +197,7 @@ export default function CartScreen() {
             <TouchableOpacity
               style={[styles.checkoutButton, { backgroundColor: colors.accent }]}
               activeOpacity={0.8}
+              onPress={() => router.push('/checkout/address')}
             >
               <Text style={[styles.checkoutButtonText, { color: colors.textInverse }]}>
                 Proceed to Checkout
