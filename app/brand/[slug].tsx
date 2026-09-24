@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { View, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, FlatList, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +22,7 @@ export default function BrandScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { colors } = useAppTheme();
 
-  const { data: allProducts, isLoading } = useActiveProducts();
+  const { data: allProducts, isLoading, isRefetching, refetch } = useActiveProducts();
 
   const brandName = useMemo(() => {
     if (!slug) return '';
@@ -82,6 +82,9 @@ export default function BrandScreen() {
         contentContainerStyle={styles.scrollContent}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor={colors.accent} colors={[colors.accent]} />
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="bag-outline" size={48} color={colors.textMuted} />

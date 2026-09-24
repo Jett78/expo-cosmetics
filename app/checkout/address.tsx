@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -164,7 +165,7 @@ function SignInPrompt() {
 export default function ShippingAddressScreen() {
   const { colors } = useAppTheme();
   const { token, authLoaded, selectedShippingAddress, setSelectedShippingAddress } = useCommerce();
-  const { data: addresses, isPending, isError, refetch } = useShippingAddresses(token);
+  const { data: addresses, isPending, isError, isRefetching, refetch } = useShippingAddresses(token);
   const createMutation = useCreateShippingAddress(token);
   const deleteMutation = useDeleteShippingAddress(token);
 
@@ -285,6 +286,14 @@ export default function ShippingAddressScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps='handled'
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
+            />
+          }
         >
           <Text style={[styles.sectionHint, { color: colors.textSecondary }]}>
             Choose where your order will be delivered

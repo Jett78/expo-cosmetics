@@ -57,6 +57,7 @@ function ShopContent() {
   const {
     data: infiniteData,
     isLoading: productsLoading,
+    isFetching,
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
@@ -315,7 +316,7 @@ function ShopContent() {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.4}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={colors.accent} />
+          <RefreshControl refreshing={isFetching} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
         }
       />
 

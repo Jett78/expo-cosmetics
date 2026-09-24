@@ -1,6 +1,8 @@
+import React, { useState } from "react";
 import {
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
@@ -9,6 +11,7 @@ import { Text } from "@rneui/themed";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useAppTheme } from "../../src/hooks/useAppTheme";
 import { useCommerce } from "../../src/context/CommerceContext";
@@ -42,9 +45,29 @@ import {
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
-  const { getCartItemCount, favoriteProducts, isAuthenticated, serverCartItemCount, serverWishlistItemCount } = useCommerce();
+  const { getCartItemCount, favoriteProducts, isAuthenticated, serverCartItemCount, serverWishlistItemCount, refreshCart, refreshWishlist } = useCommerce();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const cartCount = isAuthenticated ? serverCartItemCount : getCartItemCount();
   const wishlistCount = isAuthenticated ? serverWishlistItemCount : favoriteProducts.length;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["categories"] }),
+        queryClient.invalidateQueries({ queryKey: ["products"] }),
+        queryClient.invalidateQueries({ queryKey: ["banners"] }),
+        queryClient.invalidateQueries({ queryKey: ["brands"] }),
+        queryClient.invalidateQueries({ queryKey: ["testimonials"] }),
+        queryClient.invalidateQueries({ queryKey: ["blogs"] }),
+        Promise.resolve(refreshCart()),
+        Promise.resolve(refreshWishlist()),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: featuredProducts, isLoading: featuredLoading } = useFeaturedProducts();
@@ -139,6 +162,9 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
+        }
       >
         <View style={[styles.section, { marginBottom: spacing.lg }]}>
           {categoriesLoading ? (

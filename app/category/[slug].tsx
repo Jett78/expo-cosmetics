@@ -68,6 +68,7 @@ export default function CategoryScreen() {
   const {
     data: infiniteData,
     isLoading: productsLoading,
+    isFetching,
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
@@ -250,7 +251,7 @@ export default function CategoryScreen() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={colors.accent} />
+            <RefreshControl refreshing={isFetching} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
           }
           ListFooterComponent={renderFooter}
         />

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { Link, router } from 'expo-router';
-import { Dimensions, FlatList, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Dimensions, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import ProductCard from '../../src/components/ProductCard/Card';
 import { useCommerce } from '../../src/context/CommerceContext';
@@ -14,7 +15,17 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
 export default function WishlistScreen() {
   const { colors } = useAppTheme();
-  const { favoriteProducts, isAuthenticated, serverWishlistItems } = useCommerce();
+  const { favoriteProducts, isAuthenticated, serverWishlistItems, refreshWishlist } = useCommerce();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.resolve(refreshWishlist());
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const serverCount = serverWishlistItems.length;
   const localCount = favoriteProducts.length;
@@ -40,7 +51,13 @@ export default function WishlistScreen() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Wishlist</Text>
         </View>
-        <View style={styles.emptyContainer}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.emptyScrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
+          }
+        >
           <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceMuted }]}>
             <Ionicons name='heart-outline' size={44} color={colors.textMuted} />
           </View>
@@ -58,7 +75,7 @@ export default function WishlistScreen() {
               <Text style={styles.emptyButtonText}>Start Shopping</Text>
             </Pressable>
           </Link>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -86,6 +103,9 @@ export default function WishlistScreen() {
         contentContainerStyle={styles.gridContent}
         renderItem={({ item }) => <ProductCard product={item} width={CARD_WIDTH} showWishlist />}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
+        }
       />
     </View>
   );
@@ -126,6 +146,15 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing['3xl'],
+  },
+  flex: {
+    flex: 1,
+  },
+  emptyScrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing['3xl'],

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Pressable,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,7 +29,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 export default function SearchScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ query?: string; brandId?: string }>();
-  const { data: allProducts, isLoading } = useActiveProducts();
+  const { data: allProducts, isLoading, isRefetching, refetch } = useActiveProducts();
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
 
   const getInitialQuery = useCallback(() => {
@@ -215,6 +216,14 @@ export default function SearchScreen() {
           contentContainerStyle={styles.productListContent}
           showsVerticalScrollIndicator={false}
           renderItem={renderProduct}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
+            />
+          }
           ListEmptyComponent={
             hasQuery && !hasResults ? (
               <View style={styles.emptyState}>

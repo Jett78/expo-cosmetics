@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,7 +41,17 @@ import { Alert } from 'react-native';
 
 export default function CartScreen() {
   const { colors } = useAppTheme();
-  const { cartItems, clearCart, getCartTotal, isAuthenticated, removeFromCart, serverCartItems, serverCartTotal, serverCartItemCount } = useCommerce();
+  const { cartItems, clearCart, getCartTotal, isAuthenticated, removeFromCart, serverCartItems, serverCartTotal, serverCartItemCount, refreshCart } = useCommerce();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.resolve(refreshCart());
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleRemove = (id: string) => {
     Alert.alert('Remove item', 'Are you sure you want to remove this item from your bag?', [
@@ -68,7 +79,13 @@ export default function CartScreen() {
       </View>
 
       {isEmpty ? (
-        <View style={styles.emptyState}>
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={styles.emptyState}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
+          }
+        >
           <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceMuted }]}>
             <Ionicons name="bag-outline" size={56} color={colors.textSecondary} />
           </View>
@@ -88,13 +105,16 @@ export default function CartScreen() {
               </Text>
             </TouchableOpacity>
           </Link>
-        </View>
+        </ScrollView>
       ) : (
         <>
           <ScrollView
             style={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContentContainer}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} colors={[colors.accent]} />
+            }
           >
             {isAuthenticated
               ? serverCartItems.map((item) => (
