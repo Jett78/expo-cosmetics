@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Skeleton } from '../../src/components/Skeleton';
@@ -10,7 +10,14 @@ import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useOrderById } from '../../src/services/order/hooks';
-import type { ApiOrder, ApiOrderItem, OrderStatus } from '../../src/types/order';
+import type {
+  ApiOrder,
+  ApiOrderItem,
+  DeliveryStatus,
+  OrderStatus,
+  PaymentStatus,
+} from '../../src/types/order';
+import { getDeliveryStatus, getPaymentStatus } from '../../src/types/order';
 
 const STATUS_CONFIG: Record<
   OrderStatus,
@@ -22,11 +29,11 @@ const STATUS_CONFIG: Record<
     label: 'Pending',
     icon: 'time-outline',
   },
-  CONFIRMED: {
+  PROCESSING: {
     color: '#3B82F6',
     bg: 'rgba(59, 130, 246, 0.10)',
-    label: 'Confirmed',
-    icon: 'checkmark-circle-outline',
+    label: 'Processing',
+    icon: 'sync-outline',
   },
   SHIPPED: {
     color: '#8B5CF6',
@@ -46,6 +53,44 @@ const STATUS_CONFIG: Record<
     label: 'Cancelled',
     icon: 'close-circle-outline',
   },
+  REFUNDED: {
+    color: '#F59E0B',
+    bg: 'rgba(245, 158, 11, 0.10)',
+    label: 'Refunded',
+    icon: 'cash-outline',
+  },
+};
+
+const PAYMENT_STATUS_CONFIG: Record<
+  PaymentStatus,
+  { color: string; bg: string; label: string }
+> = {
+  FULFILLED: {
+    color: '#22C55E',
+    bg: 'rgba(34, 197, 94, 0.10)',
+    label: 'Fulfilled',
+  },
+  CANCELLED: {
+    color: '#EF4444',
+    bg: 'rgba(239, 68, 68, 0.10)',
+    label: 'Cancelled',
+  },
+};
+
+const DELIVERY_STATUS_CONFIG: Record<
+  DeliveryStatus,
+  { color: string; bg: string; label: string }
+> = {
+  DELIVERED: {
+    color: '#22C55E',
+    bg: 'rgba(34, 197, 94, 0.10)',
+    label: 'Delivered',
+  },
+  CANCELLED: {
+    color: '#EF4444',
+    bg: 'rgba(239, 68, 68, 0.10)',
+    label: 'Cancelled',
+  },
 };
 
 const TIMELINE_STEPS: {
@@ -54,17 +99,18 @@ const TIMELINE_STEPS: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
 }[] = [
   { key: 'PENDING', label: 'Placed', icon: 'receipt-outline' },
-  { key: 'CONFIRMED', label: 'Confirmed', icon: 'checkmark-circle-outline' },
+  { key: 'PROCESSING', label: 'Processing', icon: 'sync-outline' },
   { key: 'SHIPPED', label: 'Shipped', icon: 'car-outline' },
   { key: 'DELIVERED', label: 'Delivered', icon: 'checkmark-done-circle-outline' },
 ];
 
 const STATUS_ORDER: Record<OrderStatus, number> = {
   PENDING: 0,
-  CONFIRMED: 1,
+  PROCESSING: 1,
   SHIPPED: 2,
   DELIVERED: 3,
   CANCELLED: -1,
+  REFUNDED: -1,
 };
 
 function formatDate(dateString: string): string {
@@ -110,12 +156,14 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
   const { colors } = useAppTheme();
   const current = STATUS_ORDER[status];
   const isCancelled = status === 'CANCELLED';
+  const isRefunded = status === 'REFUNDED';
+  const isTerminal = isCancelled || isRefunded;
 
   return (
     <View style={styles.timeline}>
       {TIMELINE_STEPS.map((step, index) => {
         const idx = STATUS_ORDER[step.key];
-        const done = !isCancelled && idx <= current;
+        const done = !isTerminal && idx <= current;
         const active = step.key === status;
         const last = index === TIMELINE_STEPS.length - 1;
 
@@ -178,6 +226,20 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
           </View>
           <Text style={[styles.timelineLabel, { color: colors.danger, fontWeight: '700' }]}>
             Cancelled
+          </Text>
+        </View>
+      )}
+      {isRefunded && (
+        <View style={styles.timelineRow}>
+          <View style={styles.timelineLeft}>
+            <View
+              style={[styles.dot, { backgroundColor: '#F59E0B', borderColor: '#F59E0B' }]}
+            >
+              <Ionicons name='cash' size={10} color='#fff' />
+            </View>
+          </View>
+          <Text style={[styles.timelineLabel, { color: '#F59E0B', fontWeight: '700' }]}>
+            Refunded
           </Text>
         </View>
       )}
@@ -315,7 +377,7 @@ export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useAppTheme();
   const { token } = useCommerce();
-  const { data: order, isLoading, isError, refetch } = useOrderById(id ?? '', token);
+  const { data: order, isLoading, isError, isRefetching, refetch } = useOrderById(id ?? '', token);
 
   return (
     <SafeAreaView
@@ -358,6 +420,14 @@ export default function OrderDetailScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
+            />
+          }
         >
           {/* Hero Status */}
           <View style={[styles.hero, { backgroundColor: STATUS_CONFIG[order.status].color }]}>
@@ -471,28 +541,47 @@ export default function OrderDetailScreen() {
                 <Text style={[styles.payMethod, { color: colors.textPrimary }]}>
                   {order.shippingMethod}
                 </Text>
-                <View
-                  style={[
-                    styles.payBadge,
-                    {
-                      backgroundColor: order.isPaid
-                        ? 'rgba(34, 197, 94, 0.10)'
-                        : 'rgba(192, 138, 62, 0.10)',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: order.isPaid ? '#22C55E' : '#C08A3E',
-                      ...typography.label,
-                    }}
-                  >
-                    {order.isPaid ? 'Paid' : 'Unpaid'}
-                  </Text>
-                </View>
+                {(() => {
+                  const paymentStatus = getPaymentStatus(order);
+                  if (!paymentStatus) return null;
+                  const config = PAYMENT_STATUS_CONFIG[paymentStatus];
+                  return (
+                    <View style={[styles.payBadge, { backgroundColor: config.bg }]}>
+                      <Text style={{ color: config.color, ...typography.label }}>
+                        {config.label}
+                      </Text>
+                    </View>
+                  );
+                })()}
               </View>
             </View>
           </Section>
+
+          {/* Delivery Status */}
+          {(() => {
+            const deliveryStatus = getDeliveryStatus(order);
+            if (!deliveryStatus) return null;
+            const config = DELIVERY_STATUS_CONFIG[deliveryStatus];
+            return (
+              <Section title='Delivery Status' colors={colors}>
+                <View style={styles.payRow}>
+                  <View style={[styles.payIcon, { backgroundColor: 'rgba(59, 130, 246, 0.08)' }]}>
+                    <Ionicons name='cube-outline' size={18} color='#3B82F6' />
+                  </View>
+                  <View style={styles.payInfo}>
+                    <Text style={[styles.payMethod, { color: colors.textPrimary }]}>
+                      Delivery
+                    </Text>
+                    <View style={[styles.payBadge, { backgroundColor: config.bg }]}>
+                      <Text style={{ color: config.color, ...typography.label }}>
+                        {config.label}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </Section>
+            );
+          })()}
 
           {/* Notes */}
           {order.notes && (

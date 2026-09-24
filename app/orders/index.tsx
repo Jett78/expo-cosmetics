@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { router } from 'expo-router';
 import React from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Skeleton } from '../../src/components/Skeleton';
@@ -22,11 +22,11 @@ const STATUS_CONFIG: Record<
     label: 'Pending',
     icon: 'time-outline',
   },
-  CONFIRMED: {
+  PROCESSING: {
     color: '#3B82F6',
     bg: 'rgba(59, 130, 246, 0.10)',
-    label: 'Confirmed',
-    icon: 'checkmark-circle-outline',
+    label: 'Processing',
+    icon: 'sync-outline',
   },
   SHIPPED: {
     color: '#8B5CF6',
@@ -45,6 +45,12 @@ const STATUS_CONFIG: Record<
     bg: 'rgba(239, 68, 68, 0.10)',
     label: 'Cancelled',
     icon: 'close-circle-outline',
+  },
+  REFUNDED: {
+    color: '#F59E0B',
+    bg: 'rgba(245, 158, 11, 0.10)',
+    label: 'Refunded',
+    icon: 'cash-outline',
   },
 };
 
@@ -163,7 +169,7 @@ function OrderCard({ order }: { order: ApiOrder }) {
 export default function OrdersScreen() {
   const { colors } = useAppTheme();
   const { token } = useCommerce();
-  const { data: orders, isLoading, isError, refetch } = useOrders(token);
+  const { data: orders, isLoading, isError, isRefetching, refetch } = useOrders(token);
 
   return (
     <SafeAreaView
@@ -236,6 +242,14 @@ export default function OrdersScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
+            />
+          }
         />
       )}
     </SafeAreaView>

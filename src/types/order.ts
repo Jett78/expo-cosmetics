@@ -1,6 +1,10 @@
 import type { ApiImageLink } from './api-cart';
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
+
+export type PaymentStatus = 'FULFILLED' | 'CANCELLED';
+
+export type DeliveryStatus = 'DELIVERED' | 'CANCELLED';
 
 export type ApiOrderAddress = {
   id: string;
@@ -98,7 +102,7 @@ export type ApiOrderPayment = {
   id: string;
   orderId: string;
   method: string;
-  status: string;
+  status: PaymentStatus;
   amount: number;
   transactionId: string | null;
   createdAt: string;
@@ -108,6 +112,7 @@ export type ApiOrder = {
   id: string;
   userId: string;
   status: OrderStatus;
+  deliveryStatus?: DeliveryStatus | null;
   totalAmount: number;
   shippingAddressId: string;
   billingAddressId: string;
@@ -123,6 +128,20 @@ export type ApiOrder = {
   billingAddress: ApiOrderAddress;
   payment: ApiOrderPayment;
 };
+
+export function getPaymentStatus(order: ApiOrder): PaymentStatus | null {
+  if (order.payment?.status) return order.payment.status;
+  if (order.isPaid) return 'FULFILLED';
+  if (order.isCancelled) return 'CANCELLED';
+  return null;
+}
+
+export function getDeliveryStatus(order: ApiOrder): DeliveryStatus | null {
+  if (order.deliveryStatus) return order.deliveryStatus;
+  if (order.status === 'DELIVERED') return 'DELIVERED';
+  if (order.status === 'CANCELLED' || order.isCancelled) return 'CANCELLED';
+  return null;
+}
 
 export type ApiOrdersResponse = {
   success: boolean;
