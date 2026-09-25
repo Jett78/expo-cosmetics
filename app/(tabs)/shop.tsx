@@ -24,6 +24,7 @@ import ProductCard from '../../src/components/ProductCard/Card';
 import FilterBottomSheet from '../../src/components/Filter/FilterBottomSheet';
 import SortDropdown from '../../src/components/Filter/SortDropdown';
 import { ProductCardSkeleton } from '../../src/components/Skeleton';
+import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
 import type { ApiProduct } from '../../src/types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -329,13 +330,15 @@ function ShopContent() {
   );
 }
 
-export default function ShopScreen() {
+function ShopScreen() {
   return (
     <ShopFilterProvider>
       <ShopContent />
     </ShopFilterProvider>
   );
 }
+
+export default withTabScreenTransition(ShopScreen, 'left');
 
 const styles = StyleSheet.create({
   container: {

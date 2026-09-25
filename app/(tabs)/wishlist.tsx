@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Dimensions, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import ProductCard from '../../src/components/ProductCard/Card';
+import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
@@ -13,7 +14,7 @@ import type { ApiProduct } from '../../src/types/product';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
-export default function WishlistScreen() {
+function WishlistScreen() {
   const { colors } = useAppTheme();
   const { favoriteProducts, isAuthenticated, serverWishlistItems, refreshWishlist } = useCommerce();
   const [refreshing, setRefreshing] = useState(false);
@@ -110,6 +111,8 @@ export default function WishlistScreen() {
     </View>
   );
 }
+
+export default withTabScreenTransition(WishlistScreen, 'right');
 
 const styles = StyleSheet.create({
   container: {

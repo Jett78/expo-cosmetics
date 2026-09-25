@@ -6,6 +6,7 @@ import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Skeleton } from '../../src/components/Skeleton';
+import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
@@ -32,7 +33,7 @@ const guestMenuItems: MenuItem[] = [
   { icon: 'chatbubble-ellipses-outline', label: 'FAQ' },
 ];
 
-export default function AccountScreen() {
+function AccountScreen() {
   const { colors } = useAppTheme();
   const { user, logout, isAuthenticated, token, updateUser } = useCommerce();
   const { data: profile, isPending: profileLoading } = useUserDetails(token);
@@ -270,6 +271,8 @@ export default function AccountScreen() {
     </SafeAreaView>
   );
 }
+
+export default withTabScreenTransition(AccountScreen, 'left');
 
 const styles = StyleSheet.create({
   container: {

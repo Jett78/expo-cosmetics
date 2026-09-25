@@ -22,11 +22,12 @@ import { popularSearches } from '../../src/data/search';
 import { spacing, radius, typography } from '../../src/design-system';
 import type { ApiProduct } from '../../src/types';
 import ProductCard from '../../src/components/ProductCard/Card';
+import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 
-export default function SearchScreen() {
+function SearchScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ query?: string; brandId?: string }>();
   const { data: allProducts, isLoading, isRefetching, refetch } = useActiveProducts();
@@ -242,6 +243,8 @@ export default function SearchScreen() {
     </View>
   );
 }
+
+export default withTabScreenTransition(SearchScreen, 'bottom');
 
 const styles = StyleSheet.create({
   container: {

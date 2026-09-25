@@ -82,11 +82,14 @@ export default function RootLayout() {
             <TabBarVisibilityProvider>
               <AppThemeProvider>
                 <Stack
+                  initialRouteName='index'
                   screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: lightColors.background },
                   }}
-                />
+                >
+                  <Stack.Screen name="product/[slug]" options={{ animation: 'slide_from_right' }} />
+                </Stack>
                 <StatusBar style="auto" />
                 <LoginModalWrapper />
               </AppThemeProvider>

@@ -670,7 +670,7 @@ export default function PaymentScreen() {
               <Image
                 source={FONEPAY_QR}
                 style={styles.qrImage}
-                resizeMode='contain'
+                contentFit='contain'
                 accessibilityLabel='Fonepay payment QR code'
               />
               <Text style={[styles.qrHint, { color: colors.textSecondary }]}>
