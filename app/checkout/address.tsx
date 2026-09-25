@@ -18,8 +18,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as yup from 'yup';
 
+import SelectBottomSheet from '../../src/components/SelectBottomSheet';
 import { Skeleton } from '../../src/components/Skeleton';
 import { useCommerce } from '../../src/context/CommerceContext';
+import { districtsdata } from '../../src/data/nepal-districts';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import {
@@ -41,8 +43,8 @@ const validationSchema = yup.object().shape({
     .matches(/^[0-9]{7,15}$/, 'Enter a valid phone number')
     .required('Phone is required'),
   street: yup.string().trim().required('Street is required'),
-  city: yup.string().trim().required('City is required'),
-  state: yup.string().trim().required('State is required'),
+  city: yup.string().trim().required('District is required'),
+  state: yup.string().trim().required('Province is required'),
   zipCode: yup.string().trim().required('ZIP code is required'),
   country: yup.string().trim().required('Country is required'),
 });
@@ -66,6 +68,7 @@ type FormField = {
   placeholder: string;
   autoCapitalize: 'none' | 'sentences' | 'words' | 'characters';
   keyboardType: 'default' | 'phone-pad' | 'number-pad';
+  type: 'text' | 'select';
 };
 
 const formFields: FormField[] = [
@@ -76,6 +79,7 @@ const formFields: FormField[] = [
     placeholder: 'Receiver full name',
     autoCapitalize: 'words',
     keyboardType: 'default',
+    type: 'text',
   },
   {
     name: 'phone',
@@ -84,6 +88,25 @@ const formFields: FormField[] = [
     placeholder: '98XXXXXXXX',
     autoCapitalize: 'none',
     keyboardType: 'phone-pad',
+    type: 'text',
+  },
+  {
+    name: 'state',
+    label: 'PROVINCE',
+    icon: 'map-outline',
+    placeholder: 'Select province',
+    autoCapitalize: 'characters',
+    keyboardType: 'default',
+    type: 'select',
+  },
+  {
+    name: 'city',
+    label: 'DISTRICT',
+    icon: 'business-outline',
+    placeholder: 'Select district',
+    autoCapitalize: 'characters',
+    keyboardType: 'default',
+    type: 'select',
   },
   {
     name: 'street',
@@ -92,22 +115,7 @@ const formFields: FormField[] = [
     placeholder: 'House no, street, tole',
     autoCapitalize: 'words',
     keyboardType: 'default',
-  },
-  {
-    name: 'city',
-    label: 'CITY / DISTRICT',
-    icon: 'business-outline',
-    placeholder: 'e.g. BHAKTAPUR',
-    autoCapitalize: 'characters',
-    keyboardType: 'default',
-  },
-  {
-    name: 'state',
-    label: 'STATE / PROVINCE',
-    icon: 'map-outline',
-    placeholder: 'e.g. BAGMATI PROVINCE',
-    autoCapitalize: 'characters',
-    keyboardType: 'default',
+    type: 'text',
   },
   {
     name: 'zipCode',
@@ -116,6 +124,7 @@ const formFields: FormField[] = [
     placeholder: 'e.g. 1111',
     autoCapitalize: 'none',
     keyboardType: 'number-pad',
+    type: 'text',
   },
   {
     name: 'country',
@@ -124,6 +133,7 @@ const formFields: FormField[] = [
     placeholder: 'Nepal',
     autoCapitalize: 'words',
     keyboardType: 'default',
+    type: 'text',
   },
 ];
 
@@ -165,12 +175,19 @@ function SignInPrompt() {
 export default function ShippingAddressScreen() {
   const { colors } = useAppTheme();
   const { token, authLoaded, selectedShippingAddress, setSelectedShippingAddress } = useCommerce();
-  const { data: addresses, isPending, isError, isRefetching, refetch } = useShippingAddresses(token);
+  const {
+    data: addresses,
+    isPending,
+    isError,
+    isRefetching,
+    refetch,
+  } = useShippingAddresses(token);
   const createMutation = useCreateShippingAddress(token);
   const deleteMutation = useDeleteShippingAddress(token);
 
   const [showForm, setShowForm] = React.useState(false);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
+  const [activeSelect, setActiveSelect] = React.useState<FormFieldName | null>(null);
 
   const list = addresses ?? [];
   const selectedId =
@@ -424,90 +441,200 @@ export default function ShippingAddressScreen() {
                   validationSchema={validationSchema}
                   onSubmit={(values, { resetForm }) => handleCreate(values, resetForm)}
                 >
-                  {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-                    <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
-                      <View style={styles.formHeader}>
-                        <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
-                          New Address
-                        </Text>
+                  {({
+                    handleChange,
+                    handleBlur,
+                    handleSubmit,
+                    values,
+                    errors,
+                    touched,
+                    setFieldValue,
+                  }) => {
+                    const provinceOptions = districtsdata.provinceList.map((province) => ({
+                      label: province.name,
+                      value: province.name,
+                    }));
+                    const districtOptions = (
+                      districtsdata.provinceList.find((province) => province.name === values.state)
+                        ?.districtList ?? []
+                    ).map((district) => ({ label: district.name, value: district.name }));
+
+                    return (
+                      <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+                        <View style={styles.formHeader}>
+                          <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
+                            New Address
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => setShowForm(false)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityLabel='Close form'
+                          >
+                            <Ionicons name='close' size={20} color={colors.textSecondary} />
+                          </TouchableOpacity>
+                        </View>
+
+                        {formFields.map((field) => {
+                          const hasError = Boolean(touched[field.name] && errors[field.name]);
+
+                          if (field.type === 'select') {
+                            const isDistrict = field.name === 'city';
+                            const isDisabled = isDistrict && !values.state;
+                            const currentValue = values[field.name];
+                            return (
+                              <View key={field.name} style={styles.inputGroup}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                  {field.label}
+                                </Text>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.inputWrapper,
+                                    {
+                                      borderBottomColor: hasError
+                                        ? colors.danger
+                                        : focusedField === field.name
+                                          ? colors.accent
+                                          : colors.borderStrong,
+                                      opacity: isDisabled ? 0.5 : 1,
+                                    },
+                                  ]}
+                                  activeOpacity={0.7}
+                                  disabled={isDisabled}
+                                  onPress={() => {
+                                    setFocusedField(field.name);
+                                    setActiveSelect(field.name);
+                                  }}
+                                  accessibilityLabel={`Select ${field.label.toLowerCase()}`}
+                                >
+                                  <Ionicons
+                                    name={field.icon}
+                                    size={18}
+                                    color={
+                                      focusedField === field.name
+                                        ? colors.accent
+                                        : colors.textSecondary
+                                    }
+                                  />
+                                  <Text
+                                    style={[
+                                      styles.input,
+                                      {
+                                        color: currentValue ? colors.textPrimary : colors.textMuted,
+                                      },
+                                    ]}
+                                    numberOfLines={1}
+                                  >
+                                    {currentValue || field.placeholder}
+                                  </Text>
+                                  <Ionicons
+                                    name='chevron-down'
+                                    size={16}
+                                    color={colors.textSecondary}
+                                  />
+                                </TouchableOpacity>
+                                {hasError && (
+                                  <Text style={[styles.errorText, { color: colors.danger }]}>
+                                    {errors[field.name]}
+                                  </Text>
+                                )}
+                              </View>
+                            );
+                          }
+
+                          return (
+                            <View key={field.name} style={styles.inputGroup}>
+                              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                {field.label}
+                              </Text>
+                              <View
+                                style={[
+                                  styles.inputWrapper,
+                                  {
+                                    borderBottomColor: hasError
+                                      ? colors.danger
+                                      : focusedField === field.name
+                                        ? colors.accent
+                                        : colors.borderStrong,
+                                  },
+                                ]}
+                              >
+                                <Ionicons
+                                  name={field.icon}
+                                  size={18}
+                                  color={
+                                    focusedField === field.name
+                                      ? colors.accent
+                                      : colors.textSecondary
+                                  }
+                                />
+                                <TextInput
+                                  style={[styles.input, { color: colors.textPrimary }]}
+                                  placeholder={field.placeholder}
+                                  placeholderTextColor={colors.textMuted}
+                                  value={values[field.name]}
+                                  onChangeText={handleChange(field.name)}
+                                  onFocus={() => setFocusedField(field.name)}
+                                  onBlur={(e) => {
+                                    handleBlur(field.name)(e);
+                                    setFocusedField(null);
+                                  }}
+                                  autoCapitalize={field.autoCapitalize}
+                                  keyboardType={field.keyboardType}
+                                  returnKeyType='next'
+                                />
+                              </View>
+                              {hasError && (
+                                <Text style={[styles.errorText, { color: colors.danger }]}>
+                                  {errors[field.name]}
+                                </Text>
+                              )}
+                            </View>
+                          );
+                        })}
+
+                        <SelectBottomSheet
+                          visible={activeSelect !== null}
+                          onClose={() => {
+                            setActiveSelect(null);
+                            setFocusedField(null);
+                          }}
+                          title={activeSelect === 'state' ? 'Select Province' : 'Select District'}
+                          options={activeSelect === 'state' ? provinceOptions : districtOptions}
+                          value={activeSelect ? values[activeSelect] : ''}
+                          placeholder={
+                            activeSelect === 'city' && !values.state
+                              ? 'Select a province first'
+                              : 'No options available'
+                          }
+                          onSelect={(optionValue) => {
+                            if (activeSelect === 'state') {
+                              setFieldValue('state', optionValue);
+                              setFieldValue('city', '');
+                            } else if (activeSelect === 'city') {
+                              setFieldValue('city', optionValue);
+                            }
+                          }}
+                        />
+
                         <TouchableOpacity
-                          onPress={() => setShowForm(false)}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          accessibilityLabel='Close form'
+                          style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+                          onPress={() => handleSubmit()}
+                          disabled={createMutation.isPending}
+                          activeOpacity={0.85}
+                          accessibilityLabel='Save address'
                         >
-                          <Ionicons name='close' size={20} color={colors.textSecondary} />
+                          {createMutation.isPending ? (
+                            <ActivityIndicator size='small' color='#FFFFFF' />
+                          ) : (
+                            <>
+                              <Ionicons name='checkmark' size={18} color='#FFFFFF' />
+                              <Text style={styles.saveBtnText}>Save Address</Text>
+                            </>
+                          )}
                         </TouchableOpacity>
                       </View>
-
-                      {formFields.map((field) => {
-                        const hasError = Boolean(touched[field.name] && errors[field.name]);
-                        return (
-                          <View key={field.name} style={styles.inputGroup}>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                              {field.label}
-                            </Text>
-                            <View
-                              style={[
-                                styles.inputWrapper,
-                                {
-                                  borderBottomColor: hasError
-                                    ? colors.danger
-                                    : focusedField === field.name
-                                      ? colors.accent
-                                      : colors.borderStrong,
-                                },
-                              ]}
-                            >
-                              <Ionicons
-                                name={field.icon}
-                                size={18}
-                                color={
-                                  focusedField === field.name ? colors.accent : colors.textSecondary
-                                }
-                              />
-                              <TextInput
-                                style={[styles.input, { color: colors.textPrimary }]}
-                                placeholder={field.placeholder}
-                                placeholderTextColor={colors.textMuted}
-                                value={values[field.name]}
-                                onChangeText={handleChange(field.name)}
-                                onFocus={() => setFocusedField(field.name)}
-                                onBlur={(e) => {
-                                  handleBlur(field.name)(e);
-                                  setFocusedField(null);
-                                }}
-                                autoCapitalize={field.autoCapitalize}
-                                keyboardType={field.keyboardType}
-                                returnKeyType='next'
-                              />
-                            </View>
-                            {hasError && (
-                              <Text style={[styles.errorText, { color: colors.danger }]}>
-                                {errors[field.name]}
-                              </Text>
-                            )}
-                          </View>
-                        );
-                      })}
-
-                      <TouchableOpacity
-                        style={[styles.saveBtn, { backgroundColor: colors.accent }]}
-                        onPress={() => handleSubmit()}
-                        disabled={createMutation.isPending}
-                        activeOpacity={0.85}
-                        accessibilityLabel='Save address'
-                      >
-                        {createMutation.isPending ? (
-                          <ActivityIndicator size='small' color='#FFFFFF' />
-                        ) : (
-                          <>
-                            <Ionicons name='checkmark' size={18} color='#FFFFFF' />
-                            <Text style={styles.saveBtnText}>Save Address</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                    );
+                  }}
                 </Formik>
               )}
             </>

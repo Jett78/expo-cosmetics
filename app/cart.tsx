@@ -196,14 +196,6 @@ export default function CartScreen() {
                 Rs. {total.toLocaleString()}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
-                Delivery
-              </Text>
-              <Text style={[styles.freeDelivery, { color: colors.success }]}>
-                Free
-              </Text>
-            </View>
             <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
             <View style={styles.summaryRow}>
               <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>
@@ -316,9 +308,6 @@ const styles = StyleSheet.create({
     ...typography.body,
   },
   summaryValue: {
-    ...typography.bodyStrong,
-  },
-  freeDelivery: {
     ...typography.bodyStrong,
   },
   divider: {
