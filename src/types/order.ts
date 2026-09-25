@@ -129,6 +129,8 @@ export type ApiOrder = {
   isCancelled: boolean;
   shippingMethod: string;
   deliveryPrice: number;
+  couponCode?: string | null;
+  discountAmount?: number | null;
   items: ApiOrderItem[];
   shippingAddress: ApiOrderAddress;
   billingAddress: ApiOrderAddress;

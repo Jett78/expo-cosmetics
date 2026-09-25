@@ -56,36 +56,41 @@ const STATUS_CONFIG: Record<
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+  const today = new Date();
+  const isToday = date.toDateString() === today.toDateString();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
 
-function formatFullDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  if (isToday) return 'Today';
+  if (isYesterday) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function OrderCardSkeleton() {
   const { colors } = useAppTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface }]}>
+    <View
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}
+    >
       <View style={styles.cardTopRow}>
         <Skeleton width={72} height={14} borderRadius={4} />
-        <Skeleton width={64} height={24} borderRadius={12} />
+        <Skeleton width={84} height={26} borderRadius={13} />
       </View>
       <View style={styles.cardMiddle}>
         <View style={styles.thumbStack}>
-          <Skeleton width={48} height={48} borderRadius={12} />
-          <Skeleton width={48} height={48} borderRadius={12} />
+          <Skeleton width={56} height={56} borderRadius={14} />
+          <Skeleton width={56} height={56} borderRadius={14} />
         </View>
         <View style={{ flex: 1 }}>
-          <Skeleton width='65%' height={13} borderRadius={4} />
-          <Skeleton width='45%' height={11} borderRadius={4} style={{ marginTop: 6 }} />
-          <Skeleton width='30%' height={13} borderRadius={4} style={{ marginTop: 8 }} />
+          <Skeleton width='70%' height={14} borderRadius={4} />
+          <Skeleton width='45%' height={11} borderRadius={4} style={{ marginTop: 8 }} />
         </View>
+      </View>
+      <View style={[styles.cardDivider, { backgroundColor: colors.borderSubtle }]} />
+      <View style={styles.cardBottomRow}>
+        <Skeleton width={56} height={12} borderRadius={4} />
+        <Skeleton width={96} height={16} borderRadius={4} />
       </View>
     </View>
   );
@@ -99,20 +104,19 @@ function OrderCard({ order }: { order: ApiOrder }) {
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: status.color }]}
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}
       activeOpacity={0.65}
       onPress={() => router.push(`/orders/${order.id}`)}
+      accessibilityLabel={`Order ${order.id.slice(-5)}, ${status.label}`}
     >
       <View style={styles.cardTopRow}>
-        <View>
-          <Text style={[styles.orderId, { color: colors.textMuted }]}>
-            #{order.id.slice(-5).toUpperCase()}
-          </Text>
-        </View>
         <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-          <Ionicons name={status.icon} size={12} color={status.color} />
+          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
           <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
         </View>
+        <Text style={[styles.orderId, { color: colors.textMuted }]}>
+          #{order.id.slice(-5).toUpperCase()}
+        </Text>
       </View>
 
       <View style={styles.cardMiddle}>
@@ -134,14 +138,18 @@ function OrderCard({ order }: { order: ApiOrder }) {
                 {img ? (
                   <Image source={{ uri: img }} style={styles.thumbImg} resizeMode='cover' />
                 ) : (
-                  <Ionicons name='image-outline' size={18} color={colors.textMuted} />
+                  <Ionicons name='image-outline' size={20} color={colors.textMuted} />
                 )}
               </View>
             );
           })}
           {remaining > 0 && (
             <View
-              style={[styles.thumb, styles.thumbOverlap, { backgroundColor: colors.surfaceMuted }]}
+              style={[
+                styles.thumb,
+                styles.thumbOverlap,
+                { backgroundColor: colors.surfaceMuted, borderColor: colors.surface },
+              ]}
             >
               <Text style={[styles.thumbMore, { color: colors.textPrimary }]}>+{remaining}</Text>
             </View>
@@ -149,18 +157,32 @@ function OrderCard({ order }: { order: ApiOrder }) {
         </View>
 
         <View style={styles.cardInfo}>
-          <Text style={[styles.itemNames, { color: colors.textPrimary }]} numberOfLines={1}>
+          <Text style={[styles.itemNames, { color: colors.textPrimary }]} numberOfLines={2}>
             {order.items.map((i) => i.product.name).join(', ')}
           </Text>
-          <Text style={[styles.itemMeta, { color: colors.textMuted }]}>
-            {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
-            {'  ·  '}
-            {formatDate(order.placedAt)}
-          </Text>
-          <Text style={[styles.totalAmount, { color: colors.textPrimary }]}>
-            Rs. {order.totalAmount.toLocaleString()}
-          </Text>
+          <View style={styles.itemMetaRow}>
+            <Ionicons name='cube-outline' size={12} color={colors.textMuted} />
+            <Text style={[styles.itemMeta, { color: colors.textMuted }]}>
+              {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+            </Text>
+            <Text style={[styles.itemMetaDot, { color: colors.borderStrong }]}>·</Text>
+            <Ionicons name='calendar-outline' size={12} color={colors.textMuted} />
+            <Text style={[styles.itemMeta, { color: colors.textMuted }]}>
+              {formatDate(order.placedAt)}
+            </Text>
+          </View>
         </View>
+
+        <Ionicons name='chevron-forward' size={18} color={colors.textMuted} />
+      </View>
+
+      <View style={[styles.cardDivider, { backgroundColor: colors.borderSubtle }]} />
+
+      <View style={styles.cardBottomRow}>
+        <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Total</Text>
+        <Text style={[styles.totalAmount, { color: colors.textPrimary }]}>
+          Rs. {order.totalAmount.toLocaleString()}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -292,8 +314,8 @@ const styles = StyleSheet.create({
 
   /* Card */
   card: {
-    borderRadius: radius.xl,
-    borderLeftWidth: 3,
+    borderRadius: radius.md,
+    borderWidth: 1,
     padding: spacing.xl,
   },
   cardTopRow: {
@@ -311,14 +333,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: radius.pill,
-    gap: 4,
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
     ...typography.label,
     fontSize: 11,
-    textTransform: 'capitalize',
+    textTransform: 'uppercase',
   },
   cardMiddle: {
     flexDirection: 'row',
@@ -329,16 +356,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   thumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 14,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
   },
   thumbOverlap: {
-    marginLeft: -10,
+    marginLeft: -12,
   },
   thumbImg: {
     width: '100%',
@@ -346,22 +373,47 @@ const styles = StyleSheet.create({
   },
   thumbMore: {
     ...typography.bodyStrong,
-    fontSize: 12,
+    fontSize: 13,
   },
   cardInfo: {
     flex: 1,
   },
   itemNames: {
     ...typography.bodyStrong,
-    lineHeight: 18,
-    marginBottom: 2,
+    lineHeight: 19,
+    marginBottom: 6,
+  },
+  itemMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   itemMeta: {
     ...typography.caption,
-    marginBottom: spacing.sm,
+    fontSize: 11,
+  },
+  itemMetaDot: {
+    ...typography.caption,
+    fontSize: 11,
+  },
+  cardDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  totalLabel: {
+    ...typography.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   totalAmount: {
     ...typography.price,
+    fontSize: 17,
   },
 
   /* Empty / Error */

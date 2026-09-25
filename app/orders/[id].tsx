@@ -2,7 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Skeleton } from '../../src/components/Skeleton';
@@ -61,10 +68,7 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const PAYMENT_STATUS_CONFIG: Record<
-  PaymentStatus,
-  { color: string; bg: string; label: string }
-> = {
+const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { color: string; bg: string; label: string }> = {
   FULFILLED: {
     color: '#22C55E',
     bg: 'rgba(34, 197, 94, 0.10)',
@@ -77,21 +81,19 @@ const PAYMENT_STATUS_CONFIG: Record<
   },
 };
 
-const DELIVERY_STATUS_CONFIG: Record<
-  DeliveryStatus,
-  { color: string; bg: string; label: string }
-> = {
-  DELIVERED: {
-    color: '#22C55E',
-    bg: 'rgba(34, 197, 94, 0.10)',
-    label: 'Delivered',
-  },
-  CANCELLED: {
-    color: '#EF4444',
-    bg: 'rgba(239, 68, 68, 0.10)',
-    label: 'Cancelled',
-  },
-};
+const DELIVERY_STATUS_CONFIG: Record<DeliveryStatus, { color: string; bg: string; label: string }> =
+  {
+    DELIVERED: {
+      color: '#22C55E',
+      bg: 'rgba(34, 197, 94, 0.10)',
+      label: 'Delivered',
+    },
+    CANCELLED: {
+      color: '#EF4444',
+      bg: 'rgba(239, 68, 68, 0.10)',
+      label: 'Cancelled',
+    },
+  };
 
 const TIMELINE_STEPS: {
   key: OrderStatus;
@@ -232,9 +234,7 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
       {isRefunded && (
         <View style={styles.timelineRow}>
           <View style={styles.timelineLeft}>
-            <View
-              style={[styles.dot, { backgroundColor: '#F59E0B', borderColor: '#F59E0B' }]}
-            >
+            <View style={[styles.dot, { backgroundColor: '#F59E0B', borderColor: '#F59E0B' }]}>
               <Ionicons name='cash' size={10} color='#fff' />
             </View>
           </View>
@@ -379,6 +379,9 @@ export default function OrderDetailScreen() {
   const { token } = useCommerce();
   const { data: order, isLoading, isError, isRefetching, refetch } = useOrderById(id ?? '', token);
 
+  const discount = Number(order?.discountAmount ?? 0);
+  const subtotal = order ? order.totalAmount - order.deliveryPrice + discount : 0;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -458,9 +461,30 @@ export default function OrderDetailScreen() {
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Subtotal</Text>
               <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
-                Rs. {(order.totalAmount - order.deliveryPrice).toLocaleString()}
+                Rs. {subtotal.toLocaleString()}
               </Text>
             </View>
+            {discount > 0 && (
+              <View style={styles.summaryRow}>
+                <View style={styles.discountLabelCol}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                    Discount
+                  </Text>
+                  {order.couponCode && (
+                    <View
+                      style={[styles.couponChip, { backgroundColor: 'rgba(34, 197, 94, 0.10)' }]}
+                    >
+                      <Text style={[styles.couponChipText, { color: '#22C55E' }]}>
+                        {order.couponCode}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.summaryValue, { color: colors.success }]}>
+                  − Rs. {discount.toLocaleString()}
+                </Text>
+              </View>
+            )}
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Delivery</Text>
               <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
@@ -569,9 +593,7 @@ export default function OrderDetailScreen() {
                     <Ionicons name='cube-outline' size={18} color='#3B82F6' />
                   </View>
                   <View style={styles.payInfo}>
-                    <Text style={[styles.payMethod, { color: colors.textPrimary }]}>
-                      Delivery
-                    </Text>
+                    <Text style={[styles.payMethod, { color: colors.textPrimary }]}>Delivery</Text>
                     <View style={[styles.payBadge, { backgroundColor: config.bg }]}>
                       <Text style={{ color: config.color, ...typography.label }}>
                         {config.label}
@@ -751,6 +773,13 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { ...typography.body },
   summaryValue: { ...typography.bodyStrong },
+  discountLabelCol: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  couponChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  couponChipText: { ...typography.label, fontSize: 10 },
   summaryTotalLabel: { ...typography.bodyStrong },
   summaryTotalValue: { ...typography.priceLarge },
 

@@ -10,7 +10,10 @@ export function useOrders(token: string | null) {
     queryFn: () => fetchUserOrders(token as string),
     enabled: Boolean(token),
     staleTime: ORDERS_STALE_TIME,
-    select: (data) => data.order,
+    select: (data) =>
+      [...data.order].sort(
+        (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime()
+      ),
   });
 }
 
