@@ -1,6 +1,12 @@
 import type { ApiImageLink } from './api-cart';
 
-export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
+export type OrderStatus =
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'REFUNDED';
 
 export type PaymentStatus = 'FULFILLED' | 'CANCELLED';
 
@@ -176,6 +182,7 @@ export type CreateOrderPayload = {
   items: CreateOrderItemInput[];
   cartId: string;
   isOfferActive: boolean;
+  couponCode?: string;
 };
 
 export type CreateOrderResponse = {

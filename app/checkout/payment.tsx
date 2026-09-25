@@ -23,15 +23,17 @@ import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { API_BASE_URL } from '../../src/lib/config';
 import { useCart } from '../../src/services/cart/hooks';
+import { useValidateCoupon } from '../../src/services/coupon/hooks';
 import { useDeliveryPricing } from '../../src/services/delivery-pricing/hooks';
 import { useCreateOrder } from '../../src/services/order/hooks';
 import type { ApiCartItem, ApiImageLink } from '../../src/types/api-cart';
+import type { Coupon } from '../../src/types/coupon';
 import type { CreateOrderItemInput } from '../../src/types/order';
 
 const FONEPAY_QR = require('../../assets/payment/fonepay-qr.jpeg');
 
 const VALLEY_CITIES = ['KATHMANDU', 'LALITPUR', 'BHAKTAPUR'];
-const WHATSAPP_NUMBER = '9808208989';
+const WHATSAPP_NUMBER = '9779808208989';
 const DELIVERY_DATE = '2025-01-01 12:00:00';
 
 const resolveImageUrl = (link?: ApiImageLink, fallback?: string) => {
@@ -151,10 +153,14 @@ export default function PaymentScreen() {
     refetch: refetchPricing,
   } = useDeliveryPricing();
   const createOrder = useCreateOrder(token);
+  const validateCoupon = useValidateCoupon(token);
 
   const [paymentMethod, setPaymentMethod] = React.useState('');
   const [deliveryType, setDeliveryType] = React.useState('');
   const [notes, setNotes] = React.useState('');
+  const [couponInput, setCouponInput] = React.useState('');
+  const [appliedCoupon, setAppliedCoupon] = React.useState<Coupon | null>(null);
+  const [couponError, setCouponError] = React.useState<string | null>(null);
 
   const address = selectedShippingAddress;
   const city = address?.city?.toUpperCase() ?? '';
@@ -193,8 +199,72 @@ export default function PaymentScreen() {
 
   const subtotal = cartItems.reduce((sum, item) => sum + getItemUnitPrice(item) * item.quantity, 0);
   const deliveryFee = Number(deliveryPrice ?? 0);
-  const total = subtotal + deliveryFee;
+
+  let discount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discountAmount) {
+      discount = appliedCoupon.discountAmount;
+    } else if (appliedCoupon.discountPercent) {
+      discount = (subtotal * appliedCoupon.discountPercent) / 100;
+    }
+    discount = Math.min(Math.max(discount, 0), subtotal);
+    discount = Math.round(discount * 100) / 100;
+  }
+
+  const total = subtotal - discount + deliveryFee;
   const anyOfferActive = cartItems.some(isItemOfferActive);
+
+  const handleApplyCoupon = () => {
+    const code = couponInput.trim();
+    if (!code) {
+      setCouponError('Enter a coupon code.');
+      return;
+    }
+    setCouponError(null);
+    validateCoupon.mutate(code, {
+      onSuccess: (response) => {
+        if (!response.success || !response.coupon) {
+          setCouponError(response.message || 'Invalid coupon code.');
+          return;
+        }
+        const coupon = response.coupon;
+        if (coupon.couponCount <= 0) {
+          setCouponError('Coupon usage limit has been reached.');
+          return;
+        }
+        if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+          setCouponError('This coupon has expired.');
+          return;
+        }
+        if (!coupon.discountAmount && !coupon.discountPercent) {
+          setCouponError('Coupon does not contain any discount information.');
+          return;
+        }
+        let calculated = 0;
+        if (coupon.discountAmount) {
+          calculated = coupon.discountAmount;
+        } else if (coupon.discountPercent) {
+          calculated = (subtotal * coupon.discountPercent) / 100;
+        }
+        if (calculated > subtotal) {
+          setCouponError('Coupon discount cannot exceed subtotal.');
+          return;
+        }
+        setAppliedCoupon(coupon);
+        setCouponError(null);
+        Alert.alert('Coupon applied', 'Your coupon has been applied successfully.');
+      },
+      onError: (error: any) => {
+        setCouponError(error?.message ?? 'Invalid coupon code.');
+      },
+    });
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
+  };
 
   const handleWhatsApp = async () => {
     const message = `Hello! I would like to confirm my payment of Rs. ${total} for the products I have purchased`;
@@ -250,6 +320,7 @@ export default function PaymentScreen() {
         items,
         cartId: cart.id,
         isOfferActive: anyOfferActive,
+        ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
       },
       {
         onSuccess: (response) => {
@@ -636,6 +707,64 @@ export default function PaymentScreen() {
             textAlignVertical='top'
           />
 
+          {/* Coupon */}
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Apply Coupon</Text>
+          <View style={[styles.couponRow, { backgroundColor: colors.surface }]}>
+            <TextInput
+              style={[
+                styles.couponInput,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderSubtle,
+                  color: colors.textPrimary,
+                },
+              ]}
+              placeholder='Enter coupon code'
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize='characters'
+              value={couponInput}
+              onChangeText={(text) => {
+                setCouponInput(text);
+                if (couponError) setCouponError(null);
+              }}
+              editable={!appliedCoupon}
+              accessibilityLabel='Coupon code'
+            />
+            {appliedCoupon ? (
+              <TouchableOpacity
+                style={[styles.couponActionBtn, { backgroundColor: colors.surfaceMuted }]}
+                activeOpacity={0.8}
+                onPress={handleRemoveCoupon}
+                accessibilityLabel='Remove coupon'
+              >
+                <Text style={[styles.couponActionText, { color: colors.danger }]}>Remove</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.couponActionBtn, { backgroundColor: colors.accent }]}
+                activeOpacity={0.8}
+                onPress={handleApplyCoupon}
+                disabled={validateCoupon.isPending}
+                accessibilityLabel='Apply coupon'
+              >
+                {validateCoupon.isPending ? (
+                  <ActivityIndicator size='small' color='#FFFFFF' />
+                ) : (
+                  <Text style={styles.couponActionText}>Apply</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+          {couponError ? (
+            <Text style={[styles.couponError, { color: colors.danger }]}>{couponError}</Text>
+          ) : null}
+          {appliedCoupon ? (
+            <Text style={[styles.couponApplied, { color: colors.success }]}>
+              {appliedCoupon.code} applied
+              {appliedCoupon.discountPercent ? ` (${appliedCoupon.discountPercent}%)` : ''}
+            </Text>
+          ) : null}
+
           {/* Order summary */}
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Order Summary</Text>
           {summaryItems.map((entry, index) => {
@@ -725,6 +854,17 @@ export default function PaymentScreen() {
                   : `Rs. ${deliveryFee.toLocaleString()}`}
               </Text>
             </View>
+            {discount > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
+                  Discount
+                  {appliedCoupon?.discountPercent ? ` (${appliedCoupon.discountPercent}%)` : ''}
+                </Text>
+                <Text style={[styles.totalValue, { color: colors.success }]}>
+                  − Rs. {discount.toLocaleString()}
+                </Text>
+              </View>
+            )}
             <View style={[styles.totalDivider, { backgroundColor: colors.borderSubtle }]} />
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabelStrong, { color: colors.textPrimary }]}>Total</Text>
@@ -920,6 +1060,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.md,
     ...typography.body,
+  },
+  couponRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(45, 37, 32, 0.06)',
+    padding: spacing.sm,
+    alignItems: 'center',
+  },
+  couponInput: {
+    flex: 1,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    ...typography.body,
+    textTransform: 'uppercase',
+  },
+  couponActionBtn: {
+    minWidth: 84,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  couponActionText: {
+    ...typography.button,
+    color: '#FFFFFF',
+    fontSize: 14,
+    textTransform: 'none',
+  },
+  couponError: {
+    ...typography.caption,
+    marginTop: spacing.xs,
+  },
+  couponApplied: {
+    ...typography.captionLarge,
+    marginTop: spacing.xs,
+    fontWeight: '600',
   },
   summaryItem: {
     flexDirection: 'row',
