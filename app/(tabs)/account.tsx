@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { Link } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Skeleton } from '../../src/components/Skeleton';
@@ -24,13 +24,14 @@ const menuItems: MenuItem[] = [
   { icon: 'receipt-outline', label: 'My Orders', href: '/orders' },
   { icon: 'heart-outline', label: 'Wishlist', href: '/(tabs)/wishlist' },
   { icon: 'location-outline', label: 'Addresses', href: '/checkout/address' },
-  { icon: 'help-circle-outline', label: 'Help' },
+  { icon: 'help-circle-outline', label: 'Help & FAQ', href: '/faq' },
+  { icon: 'call-outline', label: 'Contact Us', href: '/contact' },
 ];
 
 const guestMenuItems: MenuItem[] = [
-  { icon: 'information-circle-outline', label: 'About Us' },
-  { icon: 'call-outline', label: 'Contact Us' },
-  { icon: 'chatbubble-ellipses-outline', label: 'FAQ' },
+  { icon: 'information-circle-outline', label: 'About Us', href: '/about' },
+  { icon: 'call-outline', label: 'Contact Us', href: '/contact' },
+  { icon: 'chatbubble-ellipses-outline', label: 'FAQ', href: '/faq' },
 ];
 
 function AccountScreen() {
@@ -47,6 +48,13 @@ function AccountScreen() {
       updateUser(profile.name, profile.email, resolved);
     }
   }, [profile, user?.avatar, user?.name, user?.email, updateUser]);
+
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of your account?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: logout },
+    ]);
+  };
 
   if (!isAuthenticated) {
     return (
@@ -106,25 +114,39 @@ function AccountScreen() {
           <View style={[styles.guestMenuSection, { backgroundColor: colors.surface }]}>
             {guestMenuItems.map((item, index) => {
               const isLast = index === guestMenuItems.length - 1;
-              return (
-                <TouchableOpacity
-                  key={item.label}
-                  style={[
-                    styles.menuRow,
-                    !isLast && {
-                      borderBottomColor: colors.borderSubtle,
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                    },
-                  ]}
-                  activeOpacity={0.6}
-                >
-                  <View style={styles.menuLeft}>
+              const rowStyle = StyleSheet.flatten([
+                styles.menuRow,
+                !isLast && {
+                  borderBottomColor: colors.borderSubtle,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                },
+              ]);
+              const content = (
+                <>
+                  <View key='label' style={styles.menuLeft}>
                     <Ionicons name={item.icon} size={20} color={colors.textSecondary} />
                     <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>
                       {item.label}
                     </Text>
                   </View>
-                  <Ionicons name='chevron-forward' size={16} color={colors.textSecondary} />
+                  <Ionicons
+                    key='chevron'
+                    name='chevron-forward'
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </>
+              );
+
+              return item.href ? (
+                <Link key={item.label} href={item.href} asChild>
+                  <TouchableOpacity style={rowStyle} activeOpacity={0.6}>
+                    {content}
+                  </TouchableOpacity>
+                </Link>
+              ) : (
+                <TouchableOpacity key={item.label} style={rowStyle} activeOpacity={0.6}>
+                  {content}
                 </TouchableOpacity>
               );
             })}
@@ -262,7 +284,7 @@ function AccountScreen() {
         <TouchableOpacity
           style={[styles.signOutButton, { borderColor: colors.borderStrong }]}
           activeOpacity={0.7}
-          onPress={logout}
+          onPress={handleSignOut}
         >
           <Ionicons name='log-out-outline' size={20} color={colors.danger} />
           <Text style={[styles.signOutText, { color: colors.danger }]}>Sign Out</Text>

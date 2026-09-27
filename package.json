@@ -67,6 +67,7 @@
     "react-native-svg": "15.15.4",
     "react-native-vector-icons": "^9.2.0",
     "react-native-web": "^0.21.2",
+    "react-native-webview": "13.16.1",
     "rn-range-slider": "^2.2.2",
     "yup": "^1.2.0"
   },
