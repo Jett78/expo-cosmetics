@@ -4,8 +4,8 @@ import React from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Accordion } from '../src/components/common/Accordion';
 import { Skeleton } from '../src/components/Skeleton';
+import { Accordion } from '../src/components/common/Accordion';
 import { radius, spacing, typography } from '../src/design-system';
 import { useAppTheme } from '../src/hooks/useAppTheme';
 import { useFaqs } from '../src/services/faq/hooks';
@@ -33,15 +33,9 @@ export default function FaqScreen() {
       </View>
 
       {isLoading ? (
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {[0, 1, 2, 3, 4].map((item) => (
-            <View
-              key={item}
-              style={[styles.skeletonCard, { backgroundColor: colors.surface }]}
-            >
+            <View key={item} style={[styles.skeletonCard, { backgroundColor: colors.surface }]}>
               <Skeleton width='80%' height={16} borderRadius={4} />
               <Skeleton width='40%' height={12} borderRadius={4} style={{ marginTop: 10 }} />
             </View>
@@ -52,9 +46,7 @@ export default function FaqScreen() {
           <View style={[styles.stateIcon, { backgroundColor: 'rgba(239, 68, 68, 0.08)' }]}>
             <Ionicons name='cloud-offline-outline' size={36} color={colors.danger} />
           </View>
-          <Text style={[styles.stateTitle, { color: colors.textPrimary }]}>
-            Couldn't load FAQs
-          </Text>
+          <Text style={[styles.stateTitle, { color: colors.textPrimary }]}>Couldn't load FAQs</Text>
           <Text style={[styles.stateSubtitle, { color: colors.textMuted }]}>
             Check your connection and try again.
           </Text>
@@ -72,9 +64,7 @@ export default function FaqScreen() {
           <View style={[styles.stateIcon, { backgroundColor: colors.surfaceMuted }]}>
             <Ionicons name='chatbubble-ellipses-outline' size={38} color={colors.textMuted} />
           </View>
-          <Text style={[styles.stateTitle, { color: colors.textPrimary }]}>
-            No FAQs yet
-          </Text>
+          <Text style={[styles.stateTitle, { color: colors.textPrimary }]}>No FAQs yet</Text>
           <Text style={[styles.stateSubtitle, { color: colors.textMuted }]}>
             We haven't published any answers yet. Reach out to us from the Contact page instead.
           </Text>
@@ -101,9 +91,7 @@ export default function FaqScreen() {
           }
         >
           <View style={[styles.heroCard, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
-              How can we help?
-            </Text>
+            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>How can we help?</Text>
             <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
               Answers to the most common questions about our products, shipping, and more.
             </Text>
@@ -135,7 +123,6 @@ export default function FaqScreen() {
               <Text style={styles.helpBtnText}>Ask us</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       )}
     </SafeAreaView>

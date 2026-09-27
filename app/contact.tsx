@@ -252,10 +252,13 @@ export default function ContactScreen() {
                   };
                   const content = (
                     <>
-                      <View style={[styles.rowIcon, { backgroundColor: colors.accentLight }]}>
+                      <View
+                        key='icon'
+                        style={[styles.rowIcon, { backgroundColor: colors.accentLight }]}
+                      >
                         <Ionicons name={row.icon} size={18} color={colors.accent} />
                       </View>
-                      <View style={styles.rowText}>
+                      <View key='text' style={styles.rowText}>
                         <Text style={[styles.rowLabel, { color: colors.textMuted }]}>
                           {row.label.toUpperCase()}
                         </Text>
@@ -264,7 +267,12 @@ export default function ContactScreen() {
                         </Text>
                       </View>
                       {row.onPress ? (
-                        <Ionicons name='chevron-forward' size={16} color={colors.textSecondary} />
+                        <Ionicons
+                          key='chevron'
+                          name='chevron-forward'
+                          size={16}
+                          color={colors.textSecondary}
+                        />
                       ) : null}
                     </>
                   );
@@ -423,9 +431,7 @@ export default function ContactScreen() {
                     />
                   </View>
                   {touched.email && errors.email ? (
-                    <Text style={[styles.errorText, { color: colors.danger }]}>
-                      {errors.email}
-                    </Text>
+                    <Text style={[styles.errorText, { color: colors.danger }]}>{errors.email}</Text>
                   ) : null}
 
                   <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>PHONE</Text>
@@ -462,9 +468,7 @@ export default function ContactScreen() {
                     />
                   </View>
                   {touched.phone && errors.phone ? (
-                    <Text style={[styles.errorText, { color: colors.danger }]}>
-                      {errors.phone}
-                    </Text>
+                    <Text style={[styles.errorText, { color: colors.danger }]}>{errors.phone}</Text>
                   ) : null}
 
                   <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -529,11 +533,7 @@ export default function ContactScreen() {
                       style={styles.multilineIcon}
                     />
                     <TextInput
-                      style={[
-                        styles.input,
-                        styles.multilineInput,
-                        { color: colors.textPrimary },
-                      ]}
+                      style={[styles.input, styles.multilineInput, { color: colors.textPrimary }]}
                       placeholder='How can we help you?'
                       placeholderTextColor={colors.textMuted}
                       value={values.message}
@@ -707,11 +707,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mapWebView: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'transparent',
   },
   mapSkeleton: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   mapFallback: {
     alignItems: 'center',
