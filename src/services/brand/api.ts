@@ -21,3 +21,24 @@ type BrandsApiResponse = {
 export async function fetchAllBrands(): Promise<BrandsApiResponse> {
   return apiGet<BrandsApiResponse>('/brand/fetch-all-brands', { page: 1, limit: 100 });
 }
+
+export type FeaturedBrandsApiResponse = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  brands: {
+    brands: ApiBrand[];
+    meta: {
+      currentPage: number;
+      totalPages: number;
+      totalBrands: number;
+      limit: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    };
+  };
+};
+
+export function fetchFeaturedBrands(): Promise<FeaturedBrandsApiResponse> {
+  return apiGet<FeaturedBrandsApiResponse>('/brand/fetch-featured-brands');
+}

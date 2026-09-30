@@ -1,5 +1,5 @@
 export type { ProductSearchParams } from './common';
-export type { ApiCategory, CategoriesApiResponse } from './category';
+export type { ApiCategory, CategoriesApiResponse, FeaturedCategoriesApiResponse } from './category';
 export type { ApiBrand } from './brand';
 export type {
   ApiReview,

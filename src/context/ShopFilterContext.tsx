@@ -23,7 +23,7 @@ type ShopFilterContextValue = {
   hasActiveFilters: boolean;
 };
 
-const DEFAULT_FILTERS: ShopFilters = {
+export const DEFAULT_FILTERS: ShopFilters = {
   sortBy: 'newest',
   categoryId: null,
   brandId: null,

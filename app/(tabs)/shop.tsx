@@ -11,12 +11,17 @@ import {
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { spacing, radius, typography } from '../../src/design-system';
 import { useTabBarVisibility } from '../../src/context/TabBarVisibilityContext';
-import { useShopFilter, ShopFilterProvider } from '../../src/context/ShopFilterContext';
+import {
+  useShopFilter,
+  ShopFilterProvider,
+  DEFAULT_FILTERS,
+  type ShopFilters,
+} from '../../src/context/ShopFilterContext';
 import { useInfiniteProducts } from '../../src/services/product/hooks';
 import { useCategories } from '../../src/services/category/hooks';
 import { useBrands } from '../../src/services/brand/hooks';
@@ -41,9 +46,52 @@ function ShopContent() {
     setMinPrice,
     setMaxPrice,
     resetFilters,
+    applyFilters,
     activeFilterCount,
     hasActiveFilters,
   } = useShopFilter();
+
+  const searchParams = useLocalSearchParams<{
+    categoryId?: string;
+    brandId?: string;
+    sortBy?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    rating?: string;
+  }>();
+
+  const paramCategoryId = searchParams.categoryId ?? '';
+  const paramBrandId = searchParams.brandId ?? '';
+  const paramSortBy = searchParams.sortBy ?? '';
+  const paramMinPrice = searchParams.minPrice ?? '';
+  const paramMaxPrice = searchParams.maxPrice ?? '';
+  const paramRating = searchParams.rating ?? '';
+
+  useEffect(() => {
+    const hasParams =
+      paramCategoryId || paramBrandId || paramSortBy || paramMinPrice || paramMaxPrice || paramRating;
+    if (!hasParams) return;
+
+    const next: ShopFilters = {
+      ...DEFAULT_FILTERS,
+      categoryId: paramCategoryId || null,
+      brandId: paramBrandId || null,
+      minPrice: paramMinPrice,
+      maxPrice: paramMaxPrice,
+      rating: paramRating ? Number(paramRating) : null,
+    };
+    if (paramSortBy) next.sortBy = paramSortBy;
+
+    applyFilters(next);
+  }, [
+    paramCategoryId,
+    paramBrandId,
+    paramSortBy,
+    paramMinPrice,
+    paramMaxPrice,
+    paramRating,
+    applyFilters,
+  ]);
 
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();

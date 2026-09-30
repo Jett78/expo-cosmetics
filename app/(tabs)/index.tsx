@@ -16,7 +16,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAppTheme } from "../../src/hooks/useAppTheme";
 import { useCommerce } from "../../src/context/CommerceContext";
 import { spacing, radius, typography } from "../../src/design-system";
-import { useCategories } from "../../src/services/category/hooks";
+import {
+  useCategories,
+  useFeaturedCategories,
+  useFeaturedSubCategories,
+} from "../../src/services/category/hooks";
 import {
   useFeaturedProducts,
   useBestSellers,
@@ -24,10 +28,11 @@ import {
   useProducts,
 } from "../../src/services/product/hooks";
 import { useActiveBanners } from "../../src/services/banner/hooks";
-import { useBrands } from "../../src/services/brand/hooks";
+import { useBrands, useFeaturedBrands } from "../../src/services/brand/hooks";
 import { useTestimonials } from "../../src/services/testimonial/hooks";
 import { useBlogs } from "../../src/services/blog/hooks";
 import ProductCard from "../../src/components/ProductCard/Card";
+import ProductShelf from "../../src/components/shelves/ProductShelf";
 import HeroBanner from "../../src/components/banners/HeroBanner";
 import MidBanner from "../../src/components/banners/MidBanner";
 import BottomBanner from "../../src/components/banners/BottomBanner";
@@ -78,6 +83,10 @@ export default function HomeScreen() {
   const { data: testimonials, isLoading: testimonialsLoading } = useTestimonials(10);
   const { data: blogs, isLoading: blogsLoading } = useBlogs(10);
   const { data: hotDealsData, isLoading: hotDealsLoading } = useProducts({ page: 1, sortBy: "offer" });
+  const { data: featuredCategories, isLoading: featuredCategoriesLoading } = useFeaturedCategories();
+  const { data: featuredSubCategories, isLoading: featuredSubCategoriesLoading } =
+    useFeaturedSubCategories();
+  const { data: featuredBrands, isLoading: featuredBrandsLoading } = useFeaturedBrands();
 
   const heroBanners = (allBanners ?? []).filter((b) => b.type === "HERO");
   const midBanners = (allBanners ?? []).filter((b) => b.type === "MID");
@@ -87,6 +96,40 @@ export default function HomeScreen() {
   const bestSellersList = bestSellers ?? [];
   const newArrivalsList = newArrivals ?? [];
   const hotDealsList = (hotDealsData?.products ?? []).slice(0, 10);
+
+  const featuredShelvesLoading =
+    featuredCategoriesLoading || featuredSubCategoriesLoading || featuredBrandsLoading;
+
+  const featuredShelves: {
+    key: string;
+    title: string;
+    subtitle: string;
+    categoryId?: string;
+    brandId?: string;
+    viewAllHref: string;
+  }[] = [
+    ...(featuredCategories ?? []).map((item) => ({
+      key: `featured-category-${item.id}`,
+      title: item.name,
+      subtitle: "Featured Category",
+      categoryId: item.id,
+      viewAllHref: `/(tabs)/shop?categoryId=${item.id}`,
+    })),
+    ...(featuredSubCategories ?? []).map((item) => ({
+      key: `featured-subcategory-${item.id}`,
+      title: item.name,
+      subtitle: "Featured Subcategory",
+      categoryId: item.id,
+      viewAllHref: `/(tabs)/shop?categoryId=${item.id}`,
+    })),
+    ...(featuredBrands ?? []).map((item) => ({
+      key: `featured-brand-${item.id}`,
+      title: item.name,
+      subtitle: "Featured Brand",
+      brandId: item.id,
+      viewAllHref: `/(tabs)/shop?brandId=${item.id}`,
+    })),
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -327,7 +370,7 @@ export default function HomeScreen() {
           )}
         </View>
 
-     
+      
 
         {bannersLoading ? (
           <View style={styles.section}>
@@ -337,19 +380,7 @@ export default function HomeScreen() {
           <MidBanner banners={midBanners} />
         )}
 
-        {brandsLoading ? (
-          <View style={styles.section}>
-            <View style={styles.brandSkeletonRow}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <BrandSkeleton key={i} />
-              ))}
-            </View>
-          </View>
-        ) : (
-          <BrandSection brands={brands ?? []} />
-        )}
-
-        <View style={styles.section}>
+         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Best Sellers
@@ -384,6 +415,43 @@ export default function HomeScreen() {
             />
           )}
         </View>
+
+         {brandsLoading ? (
+          <View style={styles.section}>
+            <View style={styles.brandSkeletonRow}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <BrandSkeleton key={i} />
+              ))}
+            </View>
+          </View>
+        ) : (
+          <BrandSection brands={brands ?? []} />
+        )}
+
+
+          <View style={{ paddingHorizontal: spacing.xl }}>
+          {featuredShelvesLoading ? (
+            <View style={{ marginTop: spacing["2xl"], flexDirection: "row", gap: spacing.md }}>
+              {[1, 2, 3].map((i) => (
+                <ProductCardSkeleton key={i} width={155} />
+              ))}
+            </View>
+          ) : (
+            featuredShelves.map((shelf) => (
+              <ProductShelf
+                key={shelf.key}
+                title={shelf.title}
+                subtitle={shelf.subtitle}
+                categoryId={shelf.categoryId}
+                brandId={shelf.brandId}
+                viewAllHref={shelf.viewAllHref}
+              />
+            ))
+          )}
+        </View>
+
+       
+       
 
         {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>

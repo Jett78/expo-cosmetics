@@ -3,6 +3,7 @@ import { searchProducts, fetchFeaturedProducts, fetchBestSellers, fetchActivePro
 import type { ProductSearchParams } from '../../types';
 
 const PRODUCT_STALE_TIME = 2 * 60 * 1000; // 2 minutes
+export const SHELF_LIMIT = 10;
 
 export function useProducts(params: ProductSearchParams) {
   return useQuery({
@@ -40,6 +41,22 @@ export function useActiveProducts() {
     queryFn: fetchActiveProducts,
     staleTime: PRODUCT_STALE_TIME,
     select: (data) => data.data.products,
+  });
+}
+
+export function useShelfProducts(params: { categoryId?: string; brandId?: string }) {
+  return useQuery({
+    queryKey: ['products', 'shelf', params],
+    queryFn: () =>
+      searchProducts({
+        sortBy: 'newest',
+        page: 1,
+        limit: SHELF_LIMIT,
+        categoryId: params.categoryId,
+        brandId: params.brandId,
+      }),
+    staleTime: PRODUCT_STALE_TIME,
+    select: (data) => data.products.filteredProducts,
   });
 }
 

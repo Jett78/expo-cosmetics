@@ -22,3 +22,14 @@ export type CategoriesApiResponse = {
     categories: ApiCategory[];
   };
 };
+
+export type FeaturedCategoriesApiResponse = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  categories: {
+    success: boolean;
+    totalItems: number;
+    categories: ApiCategory[];
+  };
+};
