@@ -44,6 +44,46 @@ export type GoogleAuthPayload = {
   idToken: string;
 };
 
+export type VerifyOtpPayload = {
+  email: string;
+  otp: string;
+};
+
+export type VerifyOtpResponse = {
+  success: boolean;
+  statusCode: string;
+  message: string;
+  data: {
+    id: string;
+    email: string;
+    name: string;
+    token: string;
+  };
+};
+
+export type OtpMessageResponse = {
+  success: boolean;
+  statusCode: string;
+  message: string;
+  data?: unknown;
+};
+
+export type ResetPasswordPayload = {
+  email: string;
+  otp: string;
+  newPassword: string;
+};
+
+export type ResetPasswordResponse = {
+  success: boolean;
+  statusCode: string;
+  message: string;
+  data?: {
+    email: string;
+    token: string;
+  };
+};
+
 export async function loginUser(payload: LoginPayload): Promise<AuthResponse> {
   return apiPost<AuthResponse>('/auth/login', payload);
 }
@@ -54,6 +94,24 @@ export async function registerUser(payload: RegisterPayload): Promise<AuthRespon
 
 export async function googleAuth(payload: GoogleAuthPayload): Promise<AuthResponse> {
   return apiPost<AuthResponse>('/auth/google', payload);
+}
+
+export async function verifyEmailOtp(payload: VerifyOtpPayload): Promise<VerifyOtpResponse> {
+  return apiPost<VerifyOtpResponse>('/auth/verify-email-otp', payload);
+}
+
+export async function resendVerifyEmailOtp(email: string): Promise<OtpMessageResponse> {
+  return apiGet<OtpMessageResponse>(`/auth/resend-verify-email-otp/${encodeURIComponent(email)}`);
+}
+
+export async function sendForgotPasswordOtp(email: string): Promise<OtpMessageResponse> {
+  return apiGet<OtpMessageResponse>(`/auth/forget-password-email-otp/${encodeURIComponent(email)}`);
+}
+
+export async function resetForgotPassword(
+  payload: ResetPasswordPayload
+): Promise<ResetPasswordResponse> {
+  return apiPatch<ResetPasswordResponse>('/auth/verify-forgot-password-otp', payload);
 }
 
 export type UserRole = {
@@ -80,10 +138,7 @@ export function isHttpUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
-export function resolveAvatarUrl(
-  avatar?: string | null,
-  avatarLink?: AvatarLink
-): string | null {
+export function resolveAvatarUrl(avatar?: string | null, avatarLink?: AvatarLink): string | null {
   if (avatarLink && typeof avatarLink === 'object' && avatarLink.original) {
     if (isHttpUrl(avatarLink.original)) return avatarLink.original;
   }

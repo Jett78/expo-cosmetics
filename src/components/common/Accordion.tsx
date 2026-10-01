@@ -3,19 +3,13 @@ import React from 'react';
 import {
   Animated,
   LayoutAnimation,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  UIManager,
   View,
 } from 'react-native';
 import { radius, spacing, typography } from '../../design-system';
 import { useAppTheme } from '../../hooks/useAppTheme';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export type AccordionItem = {
   id: string;

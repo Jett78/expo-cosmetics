@@ -4,7 +4,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Formik } from 'formik';
 import React, { useState } from 'react';
@@ -49,6 +49,11 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  const params = useLocalSearchParams<{ email?: string; verified?: string; reset?: string }>();
+  const verifiedEmail = typeof params.email === 'string' ? params.email : '';
+  const justVerified = params.verified === '1';
+  const passwordReset = params.reset === '1';
+
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
     redirectUri: makeRedirectUri({ scheme: 'la-cosmetics' }),
@@ -89,6 +94,24 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       },
       onError: (error: any) => {
+        if (error?.statusCode === 404) {
+          Alert.alert(
+            'Account Not Found',
+            "This email isn't registered yet. Create an account to continue.",
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Create Account',
+                onPress: () =>
+                  router.replace({
+                    pathname: '/(auth)/register',
+                    params: { email: values.email },
+                  }),
+              },
+            ]
+          );
+          return;
+        }
         Alert.alert('Login Failed', error?.message ?? 'Invalid email or password');
       },
     });
@@ -125,10 +148,29 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps='handled'
         >
+          {justVerified && (
+            <View style={styles.verifiedBanner}>
+              <Ionicons name='checkmark-circle' size={18} color='#1B9E62' />
+              <Text style={styles.verifiedBannerText}>
+                Email verified — sign in to continue
+              </Text>
+            </View>
+          )}
+
+          {passwordReset && (
+            <View style={styles.verifiedBanner}>
+              <Ionicons name='checkmark-circle' size={18} color='#1B9E62' />
+              <Text style={styles.verifiedBannerText}>
+                Password updated — sign in with your new password
+              </Text>
+            </View>
+          )}
+
           <Formik
-            initialValues={{ email: '', password: '' }}
+            initialValues={{ email: verifiedEmail, password: '' }}
             validationSchema={validationSchema}
             onSubmit={handleLogin}
+            enableReinitialize
           >
             {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
               <View style={styles.form}>
@@ -326,6 +368,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing['3xl'],
     paddingBottom: spacing['4xl'],
+  },
+  verifiedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#A7E4C4',
+    backgroundColor: '#EAF9F1',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    marginBottom: spacing.xl,
+  },
+  verifiedBannerText: {
+    ...typography.bodyStrong,
+    fontSize: 13,
+    color: '#14804A',
+    flex: 1,
   },
   form: {
     gap: spacing.lg,

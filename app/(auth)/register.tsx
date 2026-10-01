@@ -4,7 +4,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Formik } from 'formik';
 import React, { useState } from 'react';
@@ -56,6 +56,9 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<FieldName | null>(null);
 
+  const params = useLocalSearchParams<{ email?: string }>();
+  const initialEmail = typeof params.email === 'string' ? params.email : '';
+
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
     redirectUri: makeRedirectUri({ scheme: 'la-cosmetics' }),
@@ -84,8 +87,10 @@ export default function RegisterScreen() {
       { name: values.name, email: values.email, password: values.password },
       {
         onSuccess: (data) => {
-          register(data.data.email, data.data.name, data.data.token);
-          router.replace('/(tabs)');
+          router.replace({
+            pathname: '/(auth)/verify-email',
+            params: { email: data.data.email },
+          });
         },
         onError: (error: any) => {
           Alert.alert('Registration Failed', error?.message ?? 'Please try again');
@@ -137,9 +142,10 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps='handled'
         >
           <Formik
-            initialValues={{ name: '', email: '', password: '', confirmPassword: '' }}
+            initialValues={{ name: '', email: initialEmail, password: '', confirmPassword: '' }}
             validationSchema={validationSchema}
             onSubmit={handleRegister}
+            enableReinitialize
           >
             {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
               <View style={styles.form}>

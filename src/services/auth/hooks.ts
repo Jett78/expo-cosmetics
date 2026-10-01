@@ -5,15 +5,21 @@ import {
   googleAuth,
   loginUser,
   registerUser,
+  resendVerifyEmailOtp,
+  resetForgotPassword,
+  sendForgotPasswordOtp,
   updateUserDetails,
+  verifyEmailOtp,
 } from './api';
 import type {
   ChangePasswordPayload,
   GoogleAuthPayload,
   LoginPayload,
   RegisterPayload,
+  ResetPasswordPayload,
   UpdateProfilePayload,
   UserDetailsResponse,
+  VerifyOtpPayload,
 } from './api';
 
 export function useLoginMutation() {
@@ -31,6 +37,30 @@ export function useRegisterMutation() {
 export function useGoogleAuthMutation() {
   return useMutation({
     mutationFn: (payload: GoogleAuthPayload) => googleAuth(payload),
+  });
+}
+
+export function useVerifyEmailOtpMutation() {
+  return useMutation({
+    mutationFn: (payload: VerifyOtpPayload) => verifyEmailOtp(payload),
+  });
+}
+
+export function useResendOtpMutation() {
+  return useMutation({
+    mutationFn: (email: string) => resendVerifyEmailOtp(email),
+  });
+}
+
+export function useForgotPasswordMutation() {
+  return useMutation({
+    mutationFn: (email: string) => sendForgotPasswordOtp(email),
+  });
+}
+
+export function useResetPasswordMutation() {
+  return useMutation({
+    mutationFn: (payload: ResetPasswordPayload) => resetForgotPassword(payload),
   });
 }
 
