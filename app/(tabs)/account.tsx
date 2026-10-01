@@ -45,7 +45,7 @@ function AccountScreen() {
     if (!profile) return;
     const resolved = resolveAvatarUrl(profile.avatar, profile.avatarLink);
     if (resolved !== user?.avatar || profile.name !== user?.name || profile.email !== user?.email) {
-      updateUser(profile.name, profile.email, resolved);
+      updateUser(profile.name, profile.email, resolved ?? undefined);
     }
   }, [profile, user?.avatar, user?.name, user?.email, updateUser]);
 

@@ -115,11 +115,25 @@ export default function EditProfileScreen() {
     if (!profile) return;
     const resolved = resolveAvatarUrl(profile.avatar, profile.avatarLink);
     if (resolved !== user?.avatar || profile.name !== user?.name || profile.email !== user?.email) {
-      updateUser(profile.name, profile.email, resolved);
+      updateUser(profile.name, profile.email, resolved ?? undefined);
     }
   }, [profile, user?.avatar, user?.name, user?.email, updateUser]);
 
-  const handlePickImage = async () => {
+  const applyPickedAsset = async (asset: ImagePicker.ImagePickerAsset) => {
+    const manipulated = await ImageManipulator.manipulateAsync(
+      asset.uri,
+      [{ resize: { width: 800 } }],
+      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+    );
+
+    setPickedImage({
+      uri: manipulated.uri,
+      name: `avatar_${Date.now()}.jpg`,
+      type: 'image/jpeg',
+    });
+  };
+
+  const pickFromLibrary = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
@@ -138,22 +152,43 @@ export default function EditProfileScreen() {
       });
 
       if (result.canceled) return;
-
-      const asset = result.assets[0];
-      const manipulated = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ resize: { width: 800 } }],
-        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
-      );
-
-      setPickedImage({
-        uri: manipulated.uri,
-        name: `avatar_${Date.now()}.jpg`,
-        type: 'image/jpeg',
-      });
+      await applyPickedAsset(result.assets[0]);
     } catch {
       Alert.alert('Image selection failed', 'Please try another image.');
     }
+  };
+
+  const pickFromCamera = async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission required',
+          'Please allow camera access to take a photo for your avatar.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) return;
+      await applyPickedAsset(result.assets[0]);
+    } catch {
+      Alert.alert('Camera failed', 'We could not take a photo. Please try again.');
+    }
+  };
+
+  const handlePickImage = () => {
+    Alert.alert('Change Profile Photo', 'Choose a source for your new photo', [
+      { text: 'Take Photo', onPress: () => pickFromCamera() },
+      { text: 'Choose from Library', onPress: () => pickFromLibrary() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleSave = async (values: { name: string }) => {
@@ -188,7 +223,7 @@ export default function EditProfileScreen() {
           updateUser(
             response.data.name,
             response.data.email,
-            resolveAvatarUrl(response.data.avatar, response.data.avatarLink)
+            resolveAvatarUrl(response.data.avatar, response.data.avatarLink) ?? undefined
           );
           setPickedImage(null);
           Alert.alert('Profile Updated', 'Your changes have been saved.', [
@@ -335,7 +370,7 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
 
             <Text style={[styles.changePhotoHint, { color: colors.textMuted }]}>
-              Tap photo to change
+              Tap photo to take one or choose from library
             </Text>
 
             <Text style={[styles.heroName, { color: colors.textPrimary }]} numberOfLines={1}>
