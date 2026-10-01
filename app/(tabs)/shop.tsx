@@ -213,8 +213,8 @@ function ShopContent() {
                 onPress={chip.onRemove}
                 style={[styles.chip, { backgroundColor: colors.accentLight, borderColor: colors.accent }]}
               >
-                <Text style={[typography.caption, { color: colors.accent }]}>{chip.label}</Text>
-                <Ionicons name="close-circle" size={16} color={colors.accent} />
+                <Text style={[typography.caption, { color: colors.textInverse }]}>{chip.label}</Text>
+                <Ionicons name="close-circle" size={16} color={colors.textInverse} />
               </Pressable>
             ))}
             {activeChips.length > 1 && (
