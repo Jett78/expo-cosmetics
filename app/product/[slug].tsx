@@ -8,8 +8,6 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
-  TextInput,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text } from '@rneui/themed';
@@ -20,8 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { useProductBySlug, useProducts } from '../../src/services/product/hooks';
-import { useReviews } from '../../src/services/review/hooks';
-import { addReview } from '../../src/services/review/api';
+import ReviewSection from '../../src/components/ReviewSection';
 import { spacing, radius, typography, shadows } from '../../src/design-system';
 import type {  ApiAttribute } from '../../src/types';
 
@@ -89,7 +86,7 @@ export default function ProductDetailScreen() {
   const rawSlug = useLocalSearchParams().slug;
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : (rawSlug as string ?? '');
   const { colors } = useAppTheme();
-  const { addToCart, isFavorite, toggleFavorite, isAuthenticated } = useCommerce();
+  const { addToCart, isFavorite, toggleFavorite } = useCommerce();
 
   const { data: product, isLoading, error } = useProductBySlug(slug);
 
@@ -102,12 +99,6 @@ export default function ProductDetailScreen() {
   const [showDescription, setShowDescription] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-
-  // Review state
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewRating, setReviewRating] = useState(0);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   const attributeGroups = useMemo(
     () => (product ? getAttributeGroups(product.attributes) : {}),
@@ -122,21 +113,6 @@ export default function ProductDetailScreen() {
     () => (relatedProducts?.products ?? []).filter((p) => p.id !== product?.id).slice(0, 10),
     [relatedProducts, product],
   );
-
-  // Fetch reviews separately
-  const { data: fetchedReviews, isLoading: reviewsLoading } = useReviews(product?.id ?? '');
-
-  // Combine fetched reviews with embedded product reviews (deduplicate by id)
-  const allReviews = useMemo(() => {
-    const embedded = product?.reviews ?? [];
-    const fetched = fetchedReviews ?? [];
-    const map = new Map<string, typeof embedded[0]>();
-    for (const r of embedded) map.set(r.id, r);
-    for (const r of fetched) {
-      if (!map.has(r.id)) map.set(r.id, r as any);
-    }
-    return Array.from(map.values());
-  }, [product, fetchedReviews]);
 
   // Initial attribute selection on mount
   useEffect(() => {
@@ -260,42 +236,6 @@ export default function ProductDetailScreen() {
       if (attr.imageUrl) setSelectedFeatureImage(attr.imageUrl);
       if (attr.imageUrlLink) setSelectedFeatureImageLink(attr.imageUrlLink);
       setQuantity(1);
-    }
-  };
-
-  const handleSubmitReview = async () => {
-    if (!product) return;
-    if (!isAuthenticated) {
-      Alert.alert('Login Required', 'Please login to submit a review.');
-      return;
-    }
-    if (reviewRating === 0) {
-      Alert.alert('Rating Required', 'Please select a star rating.');
-      return;
-    }
-    if (!reviewComment.trim()) {
-      Alert.alert('Comment Required', 'Please write a review comment.');
-      return;
-    }
-
-    try {
-      setIsSubmittingReview(true);
-      await addReview(
-        {
-          comment: reviewComment.trim(),
-          rating: reviewRating,
-          productId: product.id,
-        },
-        '',
-      );
-      setReviewComment('');
-      setReviewRating(0);
-      setReviewSubmitted(true);
-      setTimeout(() => setReviewSubmitted(false), 3000);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to submit review. Please try again.');
-    } finally {
-      setIsSubmittingReview(false);
     }
   };
 
@@ -633,151 +573,11 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Reviews */}
-          <View style={[styles.reviewsSection, { borderTopColor: colors.borderSubtle }]}>
-            <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
-              Reviews
-            </Text>
-
-            {/* Rating Summary */}
-            <View style={styles.ratingSummary}>
-              <View style={styles.ratingAvg}>
-                <Text style={[typography.display, { color: colors.textPrimary }]}>{product.avgRating}</Text>
-                <View style={styles.starsSmall}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Ionicons
-                      key={star}
-                      name={star <= Math.round(product.avgRating) ? 'star' : 'star-outline'}
-                      size={14}
-                      color="#E8A952"
-                    />
-                  ))}
-                </View>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                  {allReviews.length} reviews
-                </Text>
-              </View>
-            </View>
-
-            {/* Review Form */}
-            <View style={[styles.reviewForm, { backgroundColor: colors.surfaceMuted }]}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-                Write a Review
-              </Text>
-
-              {/* Star Rating Selector */}
-              <View style={styles.starSelector}>
-                <Text style={[typography.caption, { color: colors.textSecondary, marginRight: spacing.sm }]}>Rating:</Text>
-                <View style={styles.starsSmall}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Pressable
-                      key={star}
-                      onPress={() => isAuthenticated && setReviewRating(star)}
-                      hitSlop={8}
-                    >
-                      <Ionicons
-                        name={star <= reviewRating ? 'star' : 'star-outline'}
-                        size={24}
-                        color={isAuthenticated ? '#E8A952' : colors.borderStrong}
-                      />
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              {/* Comment Input */}
-              <TextInput
-                style={[styles.reviewInput, {
-                  backgroundColor: colors.surface,
-                  color: colors.textPrimary,
-                  borderColor: colors.borderStrong,
-                }]}
-                placeholder={isAuthenticated ? 'Share your thoughts about this product...' : 'Login to write a review'}
-                placeholderTextColor={colors.textMuted}
-                value={reviewComment}
-                onChangeText={setReviewComment}
-                multiline
-                numberOfLines={4}
-                maxLength={400}
-                editable={isAuthenticated}
-                textAlignVertical="top"
-              />
-
-              {/* Submit Button */}
-              <Pressable
-                onPress={handleSubmitReview}
-                disabled={!isAuthenticated || isSubmittingReview || reviewSubmitted}
-                style={[
-                  styles.reviewSubmitBtn,
-                  {
-                    backgroundColor: reviewSubmitted ? colors.success : (isAuthenticated ? colors.accent : colors.borderStrong),
-                  },
-                ]}
-              >
-                {isSubmittingReview ? (
-                  <ActivityIndicator size="small" color={colors.textInverse} />
-                ) : (
-                  <Text style={[typography.button, { color: colors.textInverse }]}>
-                    {reviewSubmitted ? 'Review Submitted!' : 'Submit Review'}
-                  </Text>
-                )}
-              </Pressable>
-
-              {!isAuthenticated && (
-                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-                  Please login to submit a review
-                </Text>
-              )}
-            </View>
-
-            {/* Review List */}
-            {reviewsLoading ? (
-              <View style={{ paddingVertical: spacing.xl }}>
-                <ActivityIndicator size="small" color={colors.accent} />
-              </View>
-            ) : allReviews.length > 0 ? (
-              allReviews.map((review) => (
-                <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.surface }]}>
-                  <View style={styles.reviewCardHeader}>
-                    {/* Avatar */}
-                    <View style={[styles.reviewAvatar, { backgroundColor: colors.accent }]}>
-                      <Text style={[typography.bodyStrong, { color: colors.textInverse }]}>
-                        {(review as any).user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </Text>
-                    </View>
-                    <View style={styles.reviewCardContent}>
-                      <View style={styles.reviewCardTop}>
-                        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>
-                          {(review as any).user?.name || 'User'}
-                        </Text>
-                        <Text style={[typography.caption, { color: colors.textMuted }]}>
-                          {review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                        </Text>
-                      </View>
-                      <View style={styles.starsSmall}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Ionicons
-                            key={star}
-                            name={star <= review.rating ? 'star' : 'star-outline'}
-                            size={12}
-                            color="#E8A952"
-                          />
-                        ))}
-                      </View>
-                      {review.comment && (
-                        <Text style={[typography.body, { color: colors.textMuted, marginTop: spacing.xs }]}>
-                          {review.comment}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                </View>
-              ))
-            ) : (
-              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.xl }]}>
-                No reviews yet. Be the first to review!
-              </Text>
-            )}
-          </View>
+          <ReviewSection
+            productId={product.id}
+            avgRating={product.avgRating}
+            embeddedReviews={product.reviews}
+          />
 
           {/* Related Products */}
           {relatedList.length > 0 && (
@@ -932,10 +732,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 2,
   },
-  starsSmall: {
-    flexDirection: 'row',
-    gap: 1,
-  },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1023,74 +819,6 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     lineHeight: 22,
-  },
-  reviewsSection: {
-    marginTop: spacing.xl,
-    paddingTop: spacing.xl,
-    borderTopWidth: 1,
-  },
-  ratingSummary: {
-    flexDirection: 'row',
-    gap: spacing.xl,
-    marginBottom: spacing.xl,
-  },
-  ratingAvg: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  reviewCard: {
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    marginBottom: spacing.md,
-  },
-  reviewCardHeader: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  reviewAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reviewCardContent: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  reviewCardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reviewForm: {
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    marginBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  starSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reviewInput: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    minHeight: 100,
-    fontSize: 14,
-  },
-  reviewSubmitBtn: {
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
   },
   relatedSection: {
     marginTop: spacing.xl,
