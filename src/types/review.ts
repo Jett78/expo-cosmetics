@@ -34,7 +34,4 @@ export type AddReviewApiResponse = {
   success: boolean;
   statusCode: number;
   message: string;
-  wishlist?: {
-    isActive: boolean;
-  };
 };

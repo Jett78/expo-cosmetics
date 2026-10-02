@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchReviewsByProductId, addReview } from './api';
-import type { ApiReviewWithUser, AddReviewPayload } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AddReviewPayload, ApiReviewWithUser } from '../../types';
+import { addReview, fetchReviewsByProductId } from './api';
 
 const REVIEW_STALE_TIME = 1 * 60 * 1000; // 1 minute
 
@@ -18,14 +18,11 @@ export function useReviews(productId: string) {
   });
 }
 
-export function useAddReview(productId: string) {
+export function useAddReview(productId: string, token: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: AddReviewPayload) => {
-      // Token will be passed from the component
-      return addReview(payload, '');
-    },
+    mutationFn: (payload: AddReviewPayload) => addReview(payload, token as string),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
       queryClient.invalidateQueries({ queryKey: ['product'] });
