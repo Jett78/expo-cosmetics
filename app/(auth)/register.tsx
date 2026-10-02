@@ -1,13 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
-import { makeRedirectUri } from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { Formik } from 'formik';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -26,10 +23,7 @@ import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useGoogleAuthMutation, useRegisterMutation } from '../../src/services/auth/hooks';
-
-WebBrowser.maybeCompleteAuthSession();
-
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+import { useGoogleAuth } from '../../src/services/auth/useGoogleAuth';
 
 const validationSchema = yup.object().shape({
   name: yup.string().min(2, 'Name must be at least 2 characters').required('Full name is required'),
@@ -59,16 +53,10 @@ export default function RegisterScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
   const initialEmail = typeof params.email === 'string' ? params.email : '';
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    redirectUri: makeRedirectUri({ scheme: 'la-cosmetics' }),
-  });
-
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
+  const { signIn: signInWithGoogle, isReady: isGoogleAuthReady } = useGoogleAuth({
+    onSuccess: (idToken) => {
       googleAuthMutation.mutate(
-        { idToken: id_token },
+        { idToken },
         {
           onSuccess: (data) => {
             register(data.data.email, data.data.name, data.data.token);
@@ -79,8 +67,11 @@ export default function RegisterScreen() {
           },
         }
       );
-    }
-  }, [response]);
+    },
+    onError: (message) => {
+      Alert.alert('Google Sign Up Failed', message);
+    },
+  });
 
   const handleRegister = (values: { name: string; email: string; password: string }) => {
     registerMutation.mutate(
@@ -354,8 +345,8 @@ export default function RegisterScreen() {
 
           <TouchableOpacity
             style={[styles.googleBtn, { borderColor: colors.borderStrong }]}
-            onPress={() => promptAsync()}
-            disabled={!request || googleAuthMutation.isPending}
+            onPress={() => signInWithGoogle()}
+            disabled={!isGoogleAuthReady || googleAuthMutation.isPending}
             activeOpacity={0.7}
           >
             <SvgIcon name='google' width={20} height={20} />

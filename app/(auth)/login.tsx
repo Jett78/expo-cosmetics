@@ -1,13 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
-import { makeRedirectUri } from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { Formik } from 'formik';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -25,12 +22,9 @@ import SvgIcon from '../../src/components/SvgIcon';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
-import { useGoogleAuthMutation, useLoginMutation } from '../../src/services/auth/hooks';
 import { resolveAvatarUrl } from '../../src/services/auth/api';
-
-WebBrowser.maybeCompleteAuthSession();
-
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+import { useGoogleAuthMutation, useLoginMutation } from '../../src/services/auth/hooks';
+import { useGoogleAuth } from '../../src/services/auth/useGoogleAuth';
 
 const validationSchema = yup.object().shape({
   email: yup.string().email('Please enter a valid email').required('Email is required'),
@@ -54,16 +48,10 @@ export default function LoginScreen() {
   const justVerified = params.verified === '1';
   const passwordReset = params.reset === '1';
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    redirectUri: makeRedirectUri({ scheme: 'la-cosmetics' }),
-  });
-
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
+  const { signIn: signInWithGoogle, isReady: isGoogleAuthReady } = useGoogleAuth({
+    onSuccess: (idToken) => {
       googleAuthMutation.mutate(
-        { idToken: id_token },
+        { idToken },
         {
           onSuccess: (data) => {
             login(
@@ -79,8 +67,11 @@ export default function LoginScreen() {
           },
         }
       );
-    }
-  }, [response]);
+    },
+    onError: (message) => {
+      Alert.alert('Google Sign In Failed', message);
+    },
+  });
 
   const handleLogin = (values: { email: string; password: string }) => {
     loginMutation.mutate(values, {
@@ -299,8 +290,8 @@ export default function LoginScreen() {
 
           <TouchableOpacity
             style={[styles.googleBtn, { borderColor: colors.borderStrong }]}
-            onPress={() => promptAsync()}
-            disabled={!request || googleAuthMutation.isPending}
+            onPress={() => signInWithGoogle()}
+            disabled={!isGoogleAuthReady || googleAuthMutation.isPending}
             activeOpacity={0.7}
           >
             <SvgIcon name='google' width={20} height={20} />

@@ -1,6 +1,8 @@
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { products as allProducts } from '../data';
 import type { Product } from '../data/products';
@@ -467,6 +469,9 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         }
       },
       logout: () => {
+        if (Platform.OS !== 'web') {
+          GoogleSignin.signOut().catch(() => {});
+        }
         setUser(null);
         setToken(null);
         setCartItems([]);

@@ -4,7 +4,6 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { Skeleton } from '../../src/components/Skeleton';
 import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
 import { useCommerce } from '../../src/context/CommerceContext';

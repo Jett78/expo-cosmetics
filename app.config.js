@@ -1,5 +1,16 @@
 const IS_DEV_CLIENT = process.env.EXPO_PUBLIC_USE_DEV_CLIENT !== "false";
 
+const GOOGLE_IOS_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
+const GOOGLE_IOS_URL_SCHEME = GOOGLE_IOS_CLIENT_ID.endsWith(
+  ".apps.googleusercontent.com"
+)
+  ? `com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID.replace(
+      ".apps.googleusercontent.com",
+      ""
+    )}`
+  : "";
+
 module.exports = {
   expo: {
     name: process.env.EXPO_PUBLIC_APP_NAME ?? "La Cosmetics",
@@ -52,6 +63,14 @@ module.exports = {
             "The app uses your camera for visual product search.",
         },
       ],
+      ...(GOOGLE_IOS_URL_SCHEME
+        ? [
+            [
+              "@react-native-google-signin/google-signin",
+              { iosUrlScheme: GOOGLE_IOS_URL_SCHEME },
+            ],
+          ]
+        : []),
     ],
     jsEngine: "hermes",
     extra: {
