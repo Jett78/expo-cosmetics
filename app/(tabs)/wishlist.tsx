@@ -3,6 +3,7 @@ import { Text } from '@rneui/themed';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ProductCard from '../../src/components/ProductCard/Card';
 import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
@@ -16,6 +17,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
 function WishlistScreen() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { favoriteProducts, isAuthenticated, serverWishlistItems, refreshWishlist } = useCommerce();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -42,7 +44,7 @@ function WishlistScreen() {
   if (isEmpty) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -83,7 +85,7 @@ function WishlistScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -120,7 +122,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing['5xl'],
     paddingBottom: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',

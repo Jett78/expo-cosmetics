@@ -11,6 +11,7 @@ import { Text } from "@rneui/themed";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useAppTheme } from "../../src/hooks/useAppTheme";
@@ -50,6 +51,7 @@ import {
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { getCartItemCount, favoriteProducts, isAuthenticated, serverCartItemCount, serverWishlistItemCount, refreshCart, refreshWishlist } = useCommerce();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -133,7 +135,12 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, paddingTop: insets.top + spacing.md },
+        ]}
+      >
         <Image
           source={require("../../assets/la-cos.png")}
           style={styles.logo}
@@ -521,7 +528,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.06)",

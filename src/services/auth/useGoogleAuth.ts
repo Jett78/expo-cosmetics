@@ -108,6 +108,7 @@ export function useGoogleAuth({ onSuccess, onError }: GoogleAuthCallbacks) {
       ) {
         return;
       }
+      console.warn('[GoogleSignIn] native error', isErrorWithCode(error) ? error.code : error);
       onErrorRef.current(describeNativeError(error));
     }
   }, [promptAsync, request]);

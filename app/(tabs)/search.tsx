@@ -14,6 +14,7 @@ import {
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useActiveProducts } from '../../src/services/product/hooks';
@@ -29,6 +30,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 
 function SearchScreen() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ query?: string; brandId?: string }>();
   const { data: allProducts, isLoading, isRefetching, refetch } = useActiveProducts();
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
@@ -141,7 +143,7 @@ function SearchScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text h3 style={[styles.title, { color: colors.textPrimary }]}>
           Search
         </Text>
@@ -252,7 +254,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing['3xl'],
     paddingBottom: spacing.md,
   },
   title: {

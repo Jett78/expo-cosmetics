@@ -90,7 +90,7 @@ export default function RootLayout() {
                 >
                   <Stack.Screen name="product/[slug]" options={{ animation: 'slide_from_right' }} />
                 </Stack>
-                <StatusBar style="auto" />
+                <StatusBar style="dark" />
                 <LoginModalWrapper />
               </AppThemeProvider>
             </TabBarVisibilityProvider>

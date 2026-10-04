@@ -12,6 +12,7 @@ import {
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { spacing, radius, typography } from '../../src/design-system';
@@ -37,6 +38,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
 
 function ShopContent() {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { setTabBarHidden } = useTabBarVisibility();
   const {
     filters,
@@ -278,7 +280,7 @@ function ShopContent() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Shop</Text>
       </View>
 
@@ -394,7 +396,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing['5xl'],
     paddingBottom: spacing.lg,
   },
   searchBar: {
