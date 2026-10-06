@@ -46,7 +46,7 @@ function WishlistScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push('/(tabs)/account')}
             style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
             activeOpacity={0.6}
           >
@@ -87,7 +87,7 @@ function WishlistScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.push('/(tabs)/account')}
           style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
           activeOpacity={0.6}
         >
