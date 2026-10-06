@@ -187,7 +187,7 @@ export default function ProductCard({ product, width, showWishlist = true, showC
         <View style={styles.priceRow}>
           {hasDiscount ? (
             <>
-              <Text style={[typography.priceSmall, { color: colors.danger, fontWeight: '700' }]}>
+              <Text style={[typography.priceSmall, { color: colors.accent, fontWeight: '700' }]}>
                 Rs. {displayPrice.toLocaleString()}
               </Text>
               <Text
@@ -200,7 +200,7 @@ export default function ProductCard({ product, width, showWishlist = true, showC
               </Text>
             </>
           ) : (
-            <Text style={[typography.priceSmall, { color: colors.textPrimary, fontWeight: '800' }]}>
+            <Text style={[typography.priceSmall, { color: colors.accent, fontWeight: '800' }]}>
               Rs. {displayPrice.toLocaleString()}
             </Text>
           )}

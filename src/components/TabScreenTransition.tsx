@@ -12,7 +12,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 
 /** Route group that owns the tab screens (`app/(tabs)`). */
 const TAB_GROUP_SEGMENT = '(tabs)';
-const ANIMATION_DURATION = 320;
+const ANIMATION_DURATION = 500;
 
 /** Edge the screen enters from when it becomes the active tab. */
 export type TabScreenDirection = 'left' | 'right' | 'bottom';
@@ -57,12 +57,21 @@ export default function TabScreenTransition({
 
   const animatedStyle = useAnimatedStyle(() => {
     if (direction === 'left') {
-      return { transform: [{ translateX: -progress.value * width }] };
+      return { 
+        transform: [{ translateX: -progress.value * (width * 0.5) }],
+        opacity: 1 - progress.value,
+      };
     }
     if (direction === 'right') {
-      return { transform: [{ translateX: progress.value * width }] };
+      return { 
+        transform: [{ translateX: progress.value * (width * 0.5) }],
+        opacity: 1 - progress.value,
+      };
     }
-    return { transform: [{ translateY: progress.value * height }] };
+    return { 
+      transform: [{ translateY: progress.value * (height * 0.1) }],
+      opacity: 1 - progress.value,
+    };
   });
 
   return (

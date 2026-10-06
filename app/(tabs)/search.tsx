@@ -160,7 +160,6 @@ function SearchScreen() {
           onSubmitEditing={handleSubmit}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          autoFocus
           returnKeyType="search"
         />
         {query.length > 0 && (
