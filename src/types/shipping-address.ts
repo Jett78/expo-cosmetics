@@ -21,11 +21,20 @@ export type CreateShippingAddressPayload = {
   country: string;
 };
 
+export type UpdateShippingAddressPayload = CreateShippingAddressPayload;
+
 export type FetchShippingAddressesResponse = {
   success: boolean;
   statusCode: number;
   message: string;
   addresses: ShippingAddress[];
+};
+
+export type UpdateShippingAddressResponse = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: ShippingAddress;
 };
 
 export type CreateShippingAddressResponse = {

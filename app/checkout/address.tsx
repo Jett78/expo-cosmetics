@@ -28,6 +28,7 @@ import {
   useCreateShippingAddress,
   useDeleteShippingAddress,
   useShippingAddresses,
+  useUpdateShippingAddress,
 } from '../../src/services/shipping-address/hooks';
 import type { ShippingAddress } from '../../src/types/shipping-address';
 
@@ -183,11 +184,30 @@ export default function ShippingAddressScreen() {
     refetch,
   } = useShippingAddresses(token);
   const createMutation = useCreateShippingAddress(token);
+  const updateMutation = useUpdateShippingAddress(token);
   const deleteMutation = useDeleteShippingAddress(token);
 
   const [showForm, setShowForm] = React.useState(false);
+  const [editingAddress, setEditingAddress] = React.useState<ShippingAddress | null>(null);
+  const [formInitialValues, setFormInitialValues] = React.useState(initialValues);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
   const [activeSelect, setActiveSelect] = React.useState<FormFieldName | null>(null);
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingAddress(null);
+    setFormInitialValues({ ...initialValues });
+    setActiveSelect(null);
+    setFocusedField(null);
+  };
+
+  const openCreateForm = () => {
+    setEditingAddress(null);
+    setFormInitialValues({ ...initialValues });
+    setActiveSelect(null);
+    setFocusedField(null);
+    setShowForm(true);
+  };
 
   const list = addresses ?? [];
   const selectedId =
@@ -200,10 +220,17 @@ export default function ShippingAddressScreen() {
       setSelectedShippingAddress(null);
       return;
     }
-    if (!selectedId) {
+    const fresh = selectedShippingAddress
+      ? list.find((address) => address.id === selectedShippingAddress.id)
+      : undefined;
+    if (!fresh) {
       setSelectedShippingAddress(list[0]);
+      return;
     }
-  }, [list, selectedId, setSelectedShippingAddress]);
+    if (fresh !== selectedShippingAddress) {
+      setSelectedShippingAddress(fresh);
+    }
+  }, [list, selectedShippingAddress, setSelectedShippingAddress]);
 
   const handleSelect = (address: ShippingAddress) => {
     setSelectedShippingAddress(address);
@@ -220,6 +247,11 @@ export default function ShippingAddressScreen() {
           style: 'destructive',
           onPress: () => {
             deleteMutation.mutate(address.id, {
+              onSuccess: () => {
+                if (editingAddress?.id === address.id) {
+                  closeForm();
+                }
+              },
               onError: (error: any) => {
                 Alert.alert(
                   'Delete Failed',
@@ -233,11 +265,27 @@ export default function ShippingAddressScreen() {
     );
   };
 
+  const handleEdit = (address: ShippingAddress) => {
+    setEditingAddress(address);
+    setFormInitialValues({
+      fullName: address.fullName,
+      phone: address.phone,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
+    });
+    setActiveSelect(null);
+    setFocusedField(null);
+    setShowForm(true);
+  };
+
   const handleCreate = (values: typeof initialValues, resetForm: () => void) => {
     createMutation.mutate(values, {
       onSuccess: (response) => {
         resetForm();
-        setShowForm(false);
+        closeForm();
         setSelectedShippingAddress(response.data);
         Alert.alert('Address Added', 'Your shipping address has been saved.');
       },
@@ -246,6 +294,32 @@ export default function ShippingAddressScreen() {
       },
     });
   };
+
+  const handleUpdate = (values: typeof initialValues) => {
+    if (!editingAddress) {
+      return;
+    }
+    const addressId = editingAddress.id;
+    const wasSelected = selectedShippingAddress?.id === addressId;
+
+    updateMutation.mutate(
+      { addressId, payload: values },
+      {
+        onSuccess: (response) => {
+          if (wasSelected) {
+            setSelectedShippingAddress(response.data);
+          }
+          closeForm();
+          Alert.alert('Address Updated', 'Your shipping address has been updated.');
+        },
+        onError: (error: any) => {
+          Alert.alert('Update Failed', error?.message ?? 'Something went wrong. Please try again.');
+        },
+      }
+    );
+  };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const header = (
     <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
@@ -355,7 +429,7 @@ export default function ShippingAddressScreen() {
               <TouchableOpacity
                 style={[styles.retryBtn, { backgroundColor: colors.accent }]}
                 activeOpacity={0.8}
-                onPress={() => setShowForm(true)}
+                onPress={openCreateForm}
               >
                 <Ionicons name='add' size={18} color='#fff' />
                 <Text style={styles.retryBtnText}>Add Address</Text>
@@ -396,14 +470,24 @@ export default function ShippingAddressScreen() {
                           {address.fullName}
                         </Text>
                       </View>
-                      <TouchableOpacity
-                        onPress={() => handleDelete(address)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        disabled={deleteMutation.isPending}
-                        accessibilityLabel='Delete address'
-                      >
-                        <Ionicons name='trash-outline' size={18} color={colors.danger} />
-                      </TouchableOpacity>
+                      <View style={styles.cardActions}>
+                        <TouchableOpacity
+                          onPress={() => handleEdit(address)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          disabled={isSaving}
+                          accessibilityLabel='Edit address'
+                        >
+                          <Ionicons name='pencil-outline' size={18} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDelete(address)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          disabled={deleteMutation.isPending}
+                          accessibilityLabel='Delete address'
+                        >
+                          <Ionicons name='trash-outline' size={18} color={colors.danger} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
 
                     <Text style={[styles.cardLine, { color: colors.textSecondary }]}>
@@ -426,7 +510,7 @@ export default function ShippingAddressScreen() {
                 <TouchableOpacity
                   style={[styles.addNewBtn, { borderColor: colors.borderStrong }]}
                   activeOpacity={0.7}
-                  onPress={() => setShowForm(true)}
+                  onPress={openCreateForm}
                 >
                   <Ionicons name='add-circle-outline' size={20} color={colors.accent} />
                   <Text style={[styles.addNewBtnText, { color: colors.textPrimary }]}>
@@ -437,9 +521,16 @@ export default function ShippingAddressScreen() {
 
               {showForm && (
                 <Formik
-                  initialValues={initialValues}
+                  enableReinitialize
+                  initialValues={formInitialValues}
                   validationSchema={validationSchema}
-                  onSubmit={(values, { resetForm }) => handleCreate(values, resetForm)}
+                  onSubmit={(values, { resetForm }) => {
+                    if (editingAddress) {
+                      handleUpdate(values);
+                    } else {
+                      handleCreate(values, resetForm);
+                    }
+                  }}
                 >
                   {({
                     handleChange,
@@ -463,10 +554,10 @@ export default function ShippingAddressScreen() {
                       <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
                         <View style={styles.formHeader}>
                           <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
-                            New Address
+                            {editingAddress ? 'Edit Address' : 'New Address'}
                           </Text>
                           <TouchableOpacity
-                            onPress={() => setShowForm(false)}
+                            onPress={closeForm}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             accessibilityLabel='Close form'
                           >
@@ -619,16 +710,18 @@ export default function ShippingAddressScreen() {
                         <TouchableOpacity
                           style={[styles.saveBtn, { backgroundColor: colors.accent }]}
                           onPress={() => handleSubmit()}
-                          disabled={createMutation.isPending}
+                          disabled={isSaving}
                           activeOpacity={0.85}
                           accessibilityLabel='Save address'
                         >
-                          {createMutation.isPending ? (
+                          {isSaving ? (
                             <ActivityIndicator size='small' color='#FFFFFF' />
                           ) : (
                             <>
                               <Ionicons name='checkmark' size={18} color='#FFFFFF' />
-                              <Text style={styles.saveBtnText}>Save Address</Text>
+                              <Text style={styles.saveBtnText}>
+                                {editingAddress ? 'Update Address' : 'Save Address'}
+                              </Text>
                             </>
                           )}
                         </TouchableOpacity>
@@ -730,6 +823,11 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   cardName: {
     ...typography.bodyStrong,

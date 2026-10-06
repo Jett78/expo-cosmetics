@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { CreateShippingAddressPayload } from '../../types/shipping-address';
-import { createShippingAddress, deleteShippingAddress, fetchShippingAddresses } from './api';
+import type {
+  CreateShippingAddressPayload,
+  UpdateShippingAddressPayload,
+} from '../../types/shipping-address';
+import {
+  createShippingAddress,
+  deleteShippingAddress,
+  fetchShippingAddresses,
+  updateShippingAddress,
+} from './api';
 
 const SHIPPING_ADDRESS_STALE_TIME = 60 * 1000;
 
@@ -21,6 +29,23 @@ export function useCreateShippingAddress(token: string | null) {
   return useMutation({
     mutationFn: (payload: CreateShippingAddressPayload) =>
       createShippingAddress(token as string, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shipping-addresses'] });
+    },
+  });
+}
+
+export function useUpdateShippingAddress(token: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      addressId,
+      payload,
+    }: {
+      addressId: string;
+      payload: UpdateShippingAddressPayload;
+    }) => updateShippingAddress(token as string, addressId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping-addresses'] });
     },
