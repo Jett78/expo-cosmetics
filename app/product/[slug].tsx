@@ -19,6 +19,7 @@ import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { useProductBySlug, useProducts } from '../../src/services/product/hooks';
 import ReviewSection from '../../src/components/ReviewSection';
+import AddToCartBottomSheet from '../../src/components/AddToCartBottomSheet';
 import { spacing, radius, typography, shadows } from '../../src/design-system';
 import type {  ApiAttribute } from '../../src/types';
 
@@ -98,6 +99,7 @@ export default function ProductDetailScreen() {
   const [quantity, setQuantity] = useState(1);
   const [showDescription, setShowDescription] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [showCartSheet, setShowCartSheet] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const attributeGroups = useMemo(
@@ -218,6 +220,7 @@ export default function ProductDetailScreen() {
     }, quantity, attributeIds);
 
     setAddedToCart(true);
+    setShowCartSheet(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
@@ -628,8 +631,8 @@ export default function ProductDetailScreen() {
         <SafeAreaView edges={['bottom']} style={styles.bottomBarContainer}>
           <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
             <View style={styles.bottomPrice}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Price</Text>
-              <Text style={[typography.priceLarge, { color: colors.textPrimary }]}>
+              <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 11 }]}>Price</Text>
+              <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 16 }]}>
                 Rs. {(displayPrice * quantity).toLocaleString()}
               </Text>
             </View>
@@ -638,14 +641,24 @@ export default function ProductDetailScreen() {
               style={[styles.addToCartBtn, { backgroundColor: addedToCart ? '#4CAF50' : colors.accent }]}
               accessibilityLabel="Add to bag"
             >
-              <Ionicons name={addedToCart ? 'checkmark-circle-outline' : 'bag-handle-outline'} size={20} color={colors.textInverse} />
-              <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm }]}>
+              <Ionicons name={addedToCart ? 'checkmark-circle-outline' : 'bag-handle-outline'} size={18} color={colors.textInverse} />
+              <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm, fontSize: 14 }]}>
                 {addedToCart ? 'Added!' : 'Add to Bag'}
               </Text>
             </Pressable>
           </View>
         </SafeAreaView>
       )}
+
+      {/* Add to Cart Bottom Sheet */}
+      <AddToCartBottomSheet
+        visible={showCartSheet}
+        onClose={() => setShowCartSheet(false)}
+        productName={product?.name ?? ''}
+        productImage={imageUrls[0] ?? ''}
+        quantity={quantity}
+        price={displayPrice}
+      />
     </View>
   );
 }
@@ -850,15 +863,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     borderTopWidth: 1,
     ...shadows.lg,
+    gap: spacing.md,
   },
   bottomPrice: {
-    flex: 1,
+    flex: 0,
   },
   addToCartBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
   },
 });
