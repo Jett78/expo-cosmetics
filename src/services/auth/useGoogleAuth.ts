@@ -1,13 +1,10 @@
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
-import { makeRedirectUri } from 'expo-auth-session';
+import { ResponseType, makeRedirectUri } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+
+import { getGoogleSigninNative, isNativeGoogleSigninAvailable } from './googleNative';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -22,11 +19,12 @@ type GoogleAuthCallbacks = {
 };
 
 function describeNativeError(error: unknown): string {
-  if (isErrorWithCode(error)) {
-    if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+  const nativeModule = getGoogleSigninNative();
+  if (nativeModule && nativeModule.isErrorWithCode(error)) {
+    if (error.code === nativeModule.statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
       return 'Google Play Services is required for Google sign in. Please update it and try again.';
     }
-    if (error.code === statusCodes.SIGN_IN_REQUIRED) {
+    if (error.code === nativeModule.statusCodes.SIGN_IN_REQUIRED) {
       return 'No Google account is available on this device. Please add an account and try again.';
     }
   }
@@ -34,12 +32,23 @@ function describeNativeError(error: unknown): string {
 }
 
 export function useGoogleAuth({ onSuccess, onError }: GoogleAuthCallbacks) {
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+  const [nativeAvailable, setNativeAvailable] = useState(false);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: WEB_CLIENT_ID,
-    redirectUri: makeRedirectUri({ scheme: 'la-cosmetics' }),
+    responseType: ResponseType.IdToken,
+    redirectUri: makeRedirectUri({ scheme: 'la-cosmetics', path: 'oauthredirect' }),
   });
 
-  const [nativeReady, setNativeReady] = useState(Platform.OS === 'web');
+  const [nativeReady, setNativeReady] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      setNativeAvailable(false);
+      return;
+    }
+    setNativeAvailable(isNativeGoogleSigninAvailable());
+  }, []);
 
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
@@ -50,18 +59,22 @@ export function useGoogleAuth({ onSuccess, onError }: GoogleAuthCallbacks) {
   }, [onSuccess, onError]);
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (!nativeAvailable) {
       return;
     }
-    GoogleSignin.configure({
+    const nativeModule = getGoogleSigninNative();
+    if (!nativeModule) {
+      return;
+    }
+    nativeModule.GoogleSignin.configure({
       webClientId: WEB_CLIENT_ID,
       ...(IOS_CLIENT_ID ? { iosClientId: IOS_CLIENT_ID } : {}),
     });
     setNativeReady(true);
-  }, []);
+  }, [nativeAvailable]);
 
   useEffect(() => {
-    if (Platform.OS !== 'web' || !response) {
+    if (!response) {
       return;
     }
     if (response.type === 'success') {
@@ -77,43 +90,52 @@ export function useGoogleAuth({ onSuccess, onError }: GoogleAuthCallbacks) {
   }, [response]);
 
   const signIn = useCallback(async () => {
-    if (Platform.OS === 'web') {
-      if (!request) {
+    if (nativeAvailable) {
+      const nativeModule = getGoogleSigninNative();
+      if (!nativeModule) {
+        onErrorRef.current(GENERIC_ERROR);
         return;
       }
       try {
-        await promptAsync();
-      } catch {
-        onErrorRef.current(GENERIC_ERROR);
+        await nativeModule.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+        const result = await nativeModule.GoogleSignin.signIn();
+        if (result.type !== 'success') {
+          return;
+        }
+        const idToken = result.data.idToken;
+        if (idToken) {
+          onSuccessRef.current(idToken);
+        } else {
+          onErrorRef.current(GENERIC_ERROR);
+        }
+      } catch (error) {
+        if (
+          nativeModule.isErrorWithCode(error) &&
+          (error.code === nativeModule.statusCodes.SIGN_IN_CANCELLED ||
+            error.code === nativeModule.statusCodes.IN_PROGRESS)
+        ) {
+          return;
+        }
+        console.warn(
+          '[GoogleSignIn] native error',
+          nativeModule.isErrorWithCode(error) ? error.code : error
+        );
+        onErrorRef.current(describeNativeError(error));
       }
       return;
     }
 
-    try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      const result = await GoogleSignin.signIn();
-      if (result.type !== 'success') {
-        return;
-      }
-      const idToken = result.data.idToken;
-      if (idToken) {
-        onSuccessRef.current(idToken);
-      } else {
-        onErrorRef.current(GENERIC_ERROR);
-      }
-    } catch (error) {
-      if (
-        isErrorWithCode(error) &&
-        (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS)
-      ) {
-        return;
-      }
-      console.warn('[GoogleSignIn] native error', isErrorWithCode(error) ? error.code : error);
-      onErrorRef.current(describeNativeError(error));
+    if (!request) {
+      return;
     }
-  }, [promptAsync, request]);
+    try {
+      await promptAsync();
+    } catch {
+      onErrorRef.current(GENERIC_ERROR);
+    }
+  }, [nativeAvailable, promptAsync, request]);
 
-  const isReady = Platform.OS === 'web' ? Boolean(request) : nativeReady;
+  const isReady = nativeAvailable ? nativeReady : Boolean(request);
 
   return { signIn, isReady };
 }

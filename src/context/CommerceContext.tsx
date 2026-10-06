@@ -1,4 +1,3 @@
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
@@ -7,6 +6,7 @@ import { Platform } from 'react-native';
 import { products as allProducts } from '../data';
 import type { Product } from '../data/products';
 import { queryClient } from '../providers/QueryProvider';
+import { signOutNative } from '../services/auth/googleNative';
 import { addToCart as addToCartApi, deleteCartItem, fetchCart } from '../services/cart/api';
 import { fetchWishlist, toggleWishlist } from '../services/wishlist/api';
 import type {
@@ -470,7 +470,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       },
       logout: () => {
         if (Platform.OS !== 'web') {
-          GoogleSignin.signOut().catch(() => {});
+          signOutNative();
         }
         setUser(null);
         setToken(null);
