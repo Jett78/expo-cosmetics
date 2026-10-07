@@ -21,7 +21,7 @@ import { useProductBySlug, useProducts } from '../../src/services/product/hooks'
 import ReviewSection from '../../src/components/ReviewSection';
 import ProductCard from '../../src/components/ProductCard/Card';
 import AddToCartBottomSheet from '../../src/components/AddToCartBottomSheet';
-import { spacing, radius, typography, shadows } from '../../src/design-system';
+import { spacing, radius, typography } from '../../src/design-system';
 import type {  ApiAttribute } from '../../src/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -98,7 +98,7 @@ export default function ProductDetailScreen() {
   const [selectedFeatureImage, setSelectedFeatureImage] = useState('');
   const [selectedFeatureImageLink, setSelectedFeatureImageLink] = useState<Record<string, string> | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [showDescription, setShowDescription] = useState(false);
+  const [showDescription, setShowDescription] = useState(true);
   const [addedToCart, setAddedToCart] = useState(false);
   const [showCartSheet, setShowCartSheet] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -290,7 +290,7 @@ export default function ProductDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Image Gallery */}
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { backgroundColor: colors.surfaceMuted }]}>
           <FlatList
             ref={flatListRef}
             data={imageUrls}
@@ -324,7 +324,11 @@ export default function ProductDetailScreen() {
 
           <Pressable
             onPress={() => router.back()}
-            style={[styles.backButton, { backgroundColor: 'rgba(255,255,255,0.7)' }]}
+            style={({ pressed }) => [
+              styles.backButton,
+              { backgroundColor: colors.surface, borderColor: colors.borderSubtle },
+              pressed && { opacity: 0.7 },
+            ]}
             accessibilityLabel="Go back"
           >
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
@@ -342,7 +346,11 @@ export default function ProductDetailScreen() {
                 categoryId: product.categoryId,
               } as any)
             }
-            style={[styles.wishlistButton, { backgroundColor: 'rgba(255,255,255,0.7)' }]}
+            style={({ pressed }) => [
+              styles.wishlistButton,
+              { backgroundColor: colors.surface, borderColor: colors.borderSubtle },
+              pressed && { opacity: 0.7 },
+            ]}
             accessibilityLabel={isFavorite(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Ionicons
@@ -354,50 +362,66 @@ export default function ProductDetailScreen() {
         </View>
 
         {/* Product Info */}
-        <View style={styles.infoContainer}>
-          {/* Category Badge */}
-          {product.category?.name && (
-            <View style={[styles.categoryBadge, { backgroundColor: colors.accent }]}>
-              <Text style={[typography.caption, { color: colors.textInverse }]}>
-                {product.category.name}
+        <View style={[styles.infoContainer, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
+          {/* Category + Rating */}
+          <View style={styles.metaRow}>
+            {product.category?.name && (
+              <View style={[styles.categoryBadge, { backgroundColor: colors.accent }]}>
+                <Text style={[typography.label, { color: colors.textInverse }]}>
+                  {product.category.name}
+                </Text>
+              </View>
+            )}
+            <View
+              style={[
+                styles.ratingChip,
+                { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <Ionicons name="star" size={12} color="#E8A952" />
+              <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '700' }]}>
+                {product.avgRating}
+              </Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                ({product.reviews.length})
               </Text>
             </View>
-          )}
+          </View>
 
           {/* Brand */}
-          <Text style={[typography.captionLarge, { color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.xs }]}>
-            {product.brand?.name}
-          </Text>
+          {!!product.brand?.name && (
+            <Text
+              style={[
+                typography.label,
+                {
+                  color: colors.textSecondary,
+                  textTransform: 'uppercase',
+                  marginTop: spacing.lg,
+                  marginBottom: spacing.xs,
+                },
+              ]}
+            >
+              {product.brand.name}
+            </Text>
+          )}
 
           {/* Product Name */}
-          <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+          <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: spacing.md }]}>
             {product.name}
           </Text>
 
-          {/* Rating */}
-          <View style={styles.ratingRow}>
-            <View style={styles.stars}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons
-                  key={star}
-                  name={star <= Math.round(product.avgRating) ? 'star' : 'star-outline'}
-                  size={16}
-                  color="#E8A952"
-                />
-              ))}
-            </View>
-            <Text style={[typography.captionLarge, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
-              {product.avgRating} ({product.reviews.length} reviews)
-            </Text>
-          </View>
-
           {/* Price */}
           <View style={styles.priceRow}>
-            {hasDiscount ? (
+            <Text
+              style={[
+                typography.priceLarge,
+                { color: colors.accent },
+              ]}
+            >
+              Rs. {displayPrice.toLocaleString()}
+            </Text>
+            {hasDiscount && (
               <>
-                <Text style={[typography.priceLarge, { color: colors.textPrimary }]}>
-                  Rs. {displayPrice.toLocaleString()}
-                </Text>
                 <Text
                   style={[
                     typography.price,
@@ -411,15 +435,11 @@ export default function ProductDetailScreen() {
                   Rs. {originalPrice.toLocaleString()}
                 </Text>
                 <View style={[styles.discountBadge, { backgroundColor: colors.danger }]}>
-                  <Text style={[typography.caption, { color: colors.textInverse }]}>
+                  <Text style={[typography.label, { color: colors.textInverse }]}>
                     -{Math.round(((originalPrice - displayPrice) / originalPrice) * 100)}%
                   </Text>
                 </View>
               </>
-            ) : (
-              <Text style={[typography.priceLarge, { color: colors.textPrimary }]}>
-                Rs. {displayPrice.toLocaleString()}
-              </Text>
             )}
           </View>
 
@@ -432,10 +452,22 @@ export default function ProductDetailScreen() {
                 {isColor ? (
                   // Color / Shade selector
                   <>
+                    {!selectedAttributes[groupName] && (
+                      <Text
+                        style={[
+                          typography.label,
+                          { color: colors.textSecondary, textTransform: 'uppercase', marginBottom: spacing.md },
+                        ]}
+                      >
+                        {groupName}
+                      </Text>
+                    )}
                     {selectedAttributes[groupName] && (
                       <View style={styles.shadeLabelRow}>
-                        <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Shade: </Text>
-                        <View style={[styles.shadeLabelPill, { backgroundColor: colors.surfaceMuted }]}>
+                        <Text style={[typography.label, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
+                          Shade
+                        </Text>
+                        <View style={[styles.shadeLabelPill, { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle }]}>
                           <View
                             style={[styles.shadeDot, {
                               backgroundColor: items.find((it) => it.id === selectedAttributes[groupName])?.value || '#ddd',
@@ -448,26 +480,40 @@ export default function ProductDetailScreen() {
                       </View>
                     )}
                     <View style={styles.colorRow}>
-                      {items.map(({ id, value }) => (
-                        <Pressable
-                          key={id}
-                          onPress={() => handleAttributeSelect(groupName, id)}
-                          style={[
-                            styles.colorCircle,
-                            {
-                              backgroundColor: value,
-                              borderColor: selectedAttributes[groupName] === id ? colors.accent : colors.borderStrong,
-                              borderWidth: selectedAttributes[groupName] === id ? 2.5 : 1,
-                            },
-                          ]}
-                        />
-                      ))}
+                      {items.map(({ id, value }) => {
+                        const isSelected = selectedAttributes[groupName] === id;
+                        return (
+                          <View
+                            key={id}
+                            style={[styles.colorRing, isSelected && { borderColor: colors.accent }]}
+                          >
+                            <Pressable
+                              onPress={() => handleAttributeSelect(groupName, id)}
+                              style={({ pressed }) => [
+                                styles.colorCircle,
+                                {
+                                  backgroundColor: value,
+                                  borderColor: isSelected ? colors.surface : colors.borderStrong,
+                                },
+                                pressed && { opacity: 0.7 },
+                              ]}
+                              accessibilityLabel={`Select shade ${value}`}
+                              accessibilityState={{ selected: isSelected }}
+                            />
+                          </View>
+                        );
+                      })}
                     </View>
                   </>
                 ) : (
                   // Text-based variant selector (size, finish, etc.)
                   <>
-                    <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+                    <Text
+                      style={[
+                        typography.label,
+                        { color: colors.textSecondary, textTransform: 'uppercase', marginBottom: spacing.md },
+                      ]}
+                    >
                       {groupName}
                     </Text>
                     <View style={styles.sizeRow}>
@@ -477,18 +523,20 @@ export default function ProductDetailScreen() {
                           <Pressable
                             key={id}
                             onPress={() => handleAttributeSelect(groupName, id)}
-                            style={[
+                            style={({ pressed }) => [
                               styles.sizePill,
                               {
                                 backgroundColor: isSelected ? colors.accent : colors.surfaceMuted,
                                 borderColor: isSelected ? colors.accent : colors.borderStrong,
                               },
+                              pressed && { opacity: 0.7 },
                             ]}
+                            accessibilityState={{ selected: isSelected }}
                           >
                             <Text
                               style={[
                                 typography.captionLarge,
-                                { color: isSelected ? colors.textInverse : colors.textPrimary },
+                                { color: isSelected ? colors.textInverse : colors.textPrimary, fontWeight: isSelected ? '700' : '500' },
                               ]}
                             >
                               {value}{unit ? ` (${unit})` : ''}
@@ -506,23 +554,41 @@ export default function ProductDetailScreen() {
           {/* Quantity + Add to Cart — only when in stock and active */}
           {availableStock > 0 && product.isActive && (
             <View style={styles.variantSection}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-                Quantity {availableStock > 0 ? `(${availableStock} in stock)` : ''}
-              </Text>
-              <View style={styles.quantityRow}>
+              <View style={styles.sectionLabelRow}>
+                <Text style={[typography.label, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
+                  Quantity
+                </Text>
+                <View
+                  style={[
+                    styles.stockChip,
+                    { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <View style={[styles.stockDot, { backgroundColor: colors.success }]} />
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                    {availableStock} in stock
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.stepper,
+                  { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+                ]}
+              >
                 <Pressable
                   onPress={decrementQuantity}
-                  style={[styles.quantityBtn, { backgroundColor: colors.surfaceMuted }]}
+                  style={({ pressed }) => [styles.stepperBtn, pressed && { opacity: 0.6 }]}
                   accessibilityLabel="Decrease quantity"
                 >
                   <Ionicons name="remove" size={18} color={colors.textPrimary} />
                 </Pressable>
-                <Text style={[typography.bodyStrong, { color: colors.textPrimary, marginHorizontal: spacing.xl }]}>
+                <Text style={[typography.bodyStrong, styles.quantityValue, { color: colors.textPrimary }]}>
                   {quantity}
                 </Text>
                 <Pressable
                   onPress={incrementQuantity}
-                  style={[styles.quantityBtn, { backgroundColor: colors.surfaceMuted }]}
+                  style={({ pressed }) => [styles.stepperBtn, pressed && { opacity: 0.6 }]}
                   accessibilityLabel="Increase quantity"
                 >
                   <Ionicons name="add" size={18} color={colors.textPrimary} />
@@ -533,27 +599,54 @@ export default function ProductDetailScreen() {
 
           {/* Out of Stock */}
           {(!availableStock || availableStock <= 0) && (
-            <Text style={[typography.h3, { color: colors.danger, marginVertical: spacing.xl }]}>
-              Out of Stock!
-            </Text>
+            <View
+              style={[
+                styles.statusBanner,
+                { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+              <Text style={[typography.bodyStrong, { color: colors.danger }]}>Out of Stock!</Text>
+            </View>
           )}
 
           {/* Not Active */}
           {product.isActive === false && (
-            <Text style={[typography.bodyStrong, { color: colors.danger, marginVertical: spacing.xl }]}>
-              Sorry, this product is not available now.
-            </Text>
+            <View
+              style={[
+                styles.statusBanner,
+                { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <Ionicons name="time-outline" size={18} color={colors.danger} />
+              <Text style={[typography.bodyStrong, { color: colors.danger }]}>
+                Sorry, this product is not available now.
+              </Text>
+            </View>
           )}
 
           {/* Tags */}
           {product.tags && product.tags.length > 0 && (
-            <View style={styles.tagsRow}>
-              <Text style={[typography.captionLarge, { color: colors.textSecondary }]}>Tags: </Text>
+            <View style={styles.tagsSection}>
+              <Text
+                style={[
+                  typography.label,
+                  { color: colors.textSecondary, textTransform: 'uppercase', marginBottom: spacing.sm },
+                ]}
+              >
+                Tags
+              </Text>
               <View style={styles.tagsWrap}>
                 {product.tags.map((tag, idx) => (
-                  <Text key={tag.id ?? idx} style={[typography.caption, { color: colors.textMuted }]}>
-                    {tag.name}{idx < product.tags.length - 1 ? ', ' : ''}
-                  </Text>
+                  <View
+                    key={tag.id ?? idx}
+                    style={[
+                      styles.tagChip,
+                      { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+                    ]}
+                  >
+                    <Text style={[typography.caption, { color: colors.textMuted }]}>{tag.name}</Text>
+                  </View>
                 ))}
               </View>
             </View>
@@ -561,13 +654,18 @@ export default function ProductDetailScreen() {
 
           {/* Description */}
           <View style={[styles.section, { borderBottomColor: colors.borderSubtle }]}>
-            <Pressable onPress={() => setShowDescription(!showDescription)} style={styles.sectionHeader}>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary }]}>Description</Text>
-              <Ionicons
-                name={showDescription ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={colors.textSecondary}
-              />
+            <Pressable
+              onPress={() => setShowDescription(!showDescription)}
+              style={({ pressed }) => [styles.sectionHeader, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={[typography.h4, { color: colors.textPrimary }]}>Description</Text>
+              <View style={[styles.chevronChip, { backgroundColor: colors.surfaceMuted }]}>
+                <Ionicons
+                  name={showDescription ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </View>
             </Pressable>
             {showDescription && product.description && (
               <Text style={[styles.sectionContent, { color: colors.textMuted, marginTop: spacing.md }]}>
@@ -611,18 +709,33 @@ export default function ProductDetailScreen() {
         <SafeAreaView edges={['bottom']} style={styles.bottomBarContainer}>
           <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
             <View style={styles.bottomPrice}>
-              <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 11 }]}>Price</Text>
-              <Text style={[typography.bodyStrong, { color: colors.textPrimary, fontSize: 16 }]}>
+              <Text style={[typography.label, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
+                Price
+              </Text>
+              <Text
+                style={[
+                  typography.priceLarge,
+                  { color: colors.accent, marginTop: spacing.xxs },
+                ]}
+              >
                 Rs. {(displayPrice * quantity).toLocaleString()}
               </Text>
             </View>
             <Pressable
               onPress={handleAddToCart}
-              style={[styles.addToCartBtn, { backgroundColor: addedToCart ? '#4CAF50' : colors.accent }]}
+              style={({ pressed }) => [
+                styles.addToCartBtn,
+                { backgroundColor: addedToCart ? colors.success : colors.accent },
+                pressed && { opacity: 0.85 },
+              ]}
               accessibilityLabel="Add to bag"
             >
-              <Ionicons name={addedToCart ? 'checkmark-circle-outline' : 'bag-handle-outline'} size={18} color={colors.textInverse} />
-              <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm, fontSize: 14 }]}>
+              <Ionicons
+                name={addedToCart ? 'checkmark-circle-outline' : 'bag-handle-outline'}
+                size={18}
+                color={colors.textInverse}
+              />
+              <Text style={[typography.button, { color: colors.textInverse, fontSize: 14 }]}>
                 {addedToCart ? 'Added!' : 'Add to Bag'}
               </Text>
             </Pressable>
@@ -676,7 +789,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
-    bottom: spacing.lg,
+    bottom: spacing['3xl'],
     left: 0,
     right: 0,
     gap: spacing.xs,
@@ -689,46 +802,60 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Platform.OS === 'ios' ? 56 : 40,
     left: spacing.lg,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.sm,
+    borderWidth: 1,
   },
   wishlistButton: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 56 : 40,
     right: spacing.lg,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.sm,
+    borderWidth: 1,
   },
   infoContainer: {
-    padding: spacing.xl,
+    marginTop: -spacing['2xl'],
+    borderTopLeftRadius: radius['2xl'],
+    borderTopRightRadius: radius['2xl'],
+    borderTopWidth: 1,
+    paddingTop: spacing['2xl'],
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
   categoryBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xxs,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
-  ratingRow: {
+  ratingChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  stars: {
-    flexDirection: 'row',
-    gap: 2,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    flexWrap: 'wrap',
+    marginBottom: spacing['2xl'],
   },
   discountBadge: {
     paddingHorizontal: spacing.sm,
@@ -737,11 +864,32 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   variantSection: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing['2xl'],
+  },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  stockChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  stockDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   shadeLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
   shadeLabelPill: {
@@ -750,6 +898,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
+    borderWidth: 1,
     gap: spacing.sm,
   },
   shadeDot: {
@@ -762,12 +911,22 @@ const styles = StyleSheet.create({
   colorRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  colorRing: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   colorCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
   },
   sizeRow: {
     flexDirection: 'row',
@@ -779,27 +938,50 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.pill,
     borderWidth: 1,
-  },
-  quantityRow: {
-    flexDirection: 'row',
+    minWidth: 56,
     alignItems: 'center',
   },
-  quantityBtn: {
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.xs,
+  },
+  stepperBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  tagsRow: {
+  quantityValue: {
+    minWidth: 40,
+    textAlign: 'center',
+  },
+  statusBanner: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    marginBottom: spacing['2xl'],
+  },
+  tagsSection: {
     marginBottom: spacing.lg,
-    flexWrap: 'wrap',
   },
   tagsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  tagChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
   },
   section: {
     paddingVertical: spacing.xl,
@@ -808,6 +990,13 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  chevronChip: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   sectionContent: {
@@ -830,17 +1019,18 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
     borderTopWidth: 1,
-    ...shadows.lg,
     gap: spacing.md,
   },
   bottomPrice: {
-    flex: 0,
+    flexShrink: 1,
   },
   addToCartBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing['2xl'],
     paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    borderRadius: radius.pill,
   },
 });
