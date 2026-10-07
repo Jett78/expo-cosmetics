@@ -100,6 +100,9 @@ export default function ProductCard({ product, width, showWishlist = true, showC
 
   const handlePress = () => router.push(`/product/${product.slug}`);
 
+  const ratingValue = Number(product.avgRating ?? 0);
+  const ratingCount = product.reviews?.length ?? 0;
+
   const handleWishlistPress = (e: any) => {
     e.stopPropagation?.();
     toggleFavorite({
@@ -118,9 +121,10 @@ export default function ProductCard({ product, width, showWishlist = true, showC
   return (
     <Pressable
       onPress={handlePress}
-      style={[
+      style={({ pressed }) => [
         styles.card,
-        { backgroundColor: '#FFFFFF', width: width },
+        { backgroundColor: colors.surface, width: width, borderColor: colors.borderSubtle },
+        pressed && { opacity: 0.9 },
       ]}
     >
       {/* Image Area */}
@@ -132,19 +136,21 @@ export default function ProductCard({ product, width, showWishlist = true, showC
           transition={200}
         />
 
-        {/* New Badge */}
-        {isNew && (
-          <View style={[styles.badge, { backgroundColor: colors.success }]}>
-            <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '700' }]}>NEW</Text>
-          </View>
-        )}
-
-        {/* Discount Badge */}
-        {hasDiscount && (
-          <View style={[styles.discountTag, { backgroundColor: colors.danger }]}>
-            <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '700' }]}>
-              -{discountPercent}%
-            </Text>
+        {/* Badges */}
+        {(isNew || hasDiscount) && (
+          <View style={styles.badgesRow}>
+            {isNew && (
+              <View style={[styles.badge, { backgroundColor: colors.success }]}>
+                <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '700' }]}>NEW</Text>
+              </View>
+            )}
+            {hasDiscount && (
+              <View style={[styles.discountTag, { backgroundColor: colors.danger }]}>
+                <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '700' }]}>
+                  -{discountPercent}%
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -152,12 +158,16 @@ export default function ProductCard({ product, width, showWishlist = true, showC
         {showWishlist && (
           <Pressable
             onPress={handleWishlistPress}
-            style={[styles.wishlistBtn, { backgroundColor: 'rgba(255,255,255,0.85)' }]}
+            style={({ pressed }) => [
+              styles.wishlistBtn,
+              { backgroundColor: 'rgba(255,255,255,0.9)', borderColor: colors.borderSubtle },
+              pressed && { opacity: 0.7 },
+            ]}
             accessibilityLabel={isFavorite(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Ionicons
               name={isFavorite(product.id) ? 'heart' : 'heart-outline'}
-              size={16}
+              size={15}
               color={isFavorite(product.id) ? colors.danger : colors.textPrimary}
             />
           </Pressable>
@@ -174,14 +184,37 @@ export default function ProductCard({ product, width, showWishlist = true, showC
       {/* Info Area */}
       <View style={styles.info}>
         {product.brand?.name && (
-          <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }]} numberOfLines={1}>
+          <Text
+            style={[typography.caption, { color: colors.textPrimary, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.4 }]}
+            numberOfLines={1}
+          >
             {product.brand.name}
           </Text>
         )}
 
-        <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '700', lineHeight: 18 }]} numberOfLines={2}>
+        <Text
+          style={[typography.captionLarge, { color: colors.textPrimary, fontSize: 14, lineHeight: 19, fontWeight: '500' }]}
+          numberOfLines={2}
+        >
           {product.name}
         </Text>
+
+        {/* Rating */}
+        <View style={styles.ratingRow}>
+          <View style={styles.stars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons
+                key={star}
+                name={star <= Math.round(ratingValue) ? 'star' : 'star-outline'}
+                size={11}
+                color="#E8A952"
+              />
+            ))}
+          </View>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+            ({ratingCount})
+          </Text>
+        </View>
 
         {/* Price */}
         <View style={styles.priceRow}>
@@ -215,10 +248,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     marginBottom: spacing.md,
+    borderWidth: 1,
   },
   imageContainer: {
     position: 'relative',
-    aspectRatio: 4 / 5,
+    aspectRatio: 1 / 1.15,
     backgroundColor: '#ffffff',
   },
   image: {
@@ -226,28 +260,30 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   badge: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
     borderRadius: radius.full,
   },
   discountTag: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
     borderRadius: radius.full,
+  },
+  badgesRow: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    flexDirection: 'row',
+    gap: spacing.xs,
   },
   wishlistBtn: {
     position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -259,7 +295,16 @@ const styles = StyleSheet.create({
   },
   info: {
     padding: spacing.md,
-    gap: 3,
+    gap: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: 1,
   },
   priceRow: {
     flexDirection: 'row',

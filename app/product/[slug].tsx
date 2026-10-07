@@ -714,7 +714,7 @@ export default function ProductDetailScreen() {
                 keyExtractor={(p) => p.id}
                 contentContainerStyle={{ gap: spacing.md }}
                 renderItem={({ item: rp }) => (
-                  <ProductCard product={rp} width={160} showWishlist={false} />
+                  <ProductCard product={rp} width={160} />
                 )}
               />
             </View>
@@ -733,7 +733,7 @@ export default function ProductDetailScreen() {
                 keyExtractor={(p) => p.id}
                 contentContainerStyle={{ gap: spacing.md }}
                 renderItem={({ item: bp }) => (
-                  <ProductCard product={bp} width={160} showWishlist={false} />
+                  <ProductCard product={bp} width={160} />
                 )}
               />
             </View>
@@ -752,7 +752,7 @@ export default function ProductDetailScreen() {
                 keyExtractor={(p) => p.id}
                 contentContainerStyle={{ gap: spacing.md }}
                 renderItem={({ item: fp }) => (
-                  <ProductCard product={fp} width={160} showWishlist={false} />
+                  <ProductCard product={fp} width={160} />
                 )}
               />
             </View>
@@ -762,23 +762,23 @@ export default function ProductDetailScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Sticky Bottom Bar — only when in stock and active */}
-      {availableStock > 0 && product.isActive && (
-        <SafeAreaView edges={['bottom']} style={styles.bottomBarContainer}>
-          <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
-            <View style={styles.bottomPrice}>
-              <Text style={[typography.label, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
-                Price
-              </Text>
-              <Text
-                style={[
-                  typography.priceLarge,
-                  { color: colors.accent, marginTop: spacing.xxs },
-                ]}
-              >
-                Rs. {(displayPrice * quantity).toLocaleString()}
-              </Text>
-            </View>
+      {/* Sticky Bottom Bar */}
+      <SafeAreaView edges={['bottom']} style={styles.bottomBarContainer}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.borderSubtle }]}>
+          <View style={styles.bottomPrice}>
+            <Text style={[typography.label, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
+              Price
+            </Text>
+            <Text
+              style={[
+                typography.priceLarge,
+                { color: colors.accent, marginTop: spacing.xxs },
+              ]}
+            >
+              Rs. {(displayPrice * quantity).toLocaleString()}
+            </Text>
+          </View>
+          {availableStock > 0 && product.isActive ? (
             <Pressable
               onPress={handleAddToCart}
               style={({ pressed }) => [
@@ -797,9 +797,22 @@ export default function ProductDetailScreen() {
                 {addedToCart ? 'Added!' : 'Add to Bag'}
               </Text>
             </Pressable>
-          </View>
-        </SafeAreaView>
-      )}
+          ) : (
+            <View
+              style={[
+                styles.addToCartBtn,
+                { backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.borderStrong },
+              ]}
+              accessibilityLabel="Out of stock"
+            >
+              <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />
+              <Text style={[typography.button, { color: colors.textMuted, fontSize: 14 }]}>
+                Out of Stock
+              </Text>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
 
       {/* Add to Cart Bottom Sheet */}
       <AddToCartBottomSheet
