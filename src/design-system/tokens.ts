@@ -77,7 +77,7 @@ export const darkColors = {
   accent: '#F84EA0',
   accentPressed: '#FC8EC4',
   accentLight: 'rgba(248, 78, 160, 0.2)',
-  success: '#8FB08F',
+  success: '#83b783',
   warning: '#E8C9A8',
   danger: '#E07090',
   berry: '#C44A7A',

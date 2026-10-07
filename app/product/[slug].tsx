@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useCommerce } from '../../src/context/CommerceContext';
-import { useProductBySlug, useProducts } from '../../src/services/product/hooks';
+import { useProductBySlug, useProducts, useBestSellers, useFeaturedProducts } from '../../src/services/product/hooks';
 import ReviewSection from '../../src/components/ReviewSection';
 import ProductCard from '../../src/components/ProductCard/Card';
 import AddToCartBottomSheet from '../../src/components/AddToCartBottomSheet';
@@ -112,9 +112,22 @@ export default function ProductDetailScreen() {
     categoryId: product?.category?.id,
   });
 
+  const { data: featuredProducts } = useFeaturedProducts();
+  const { data: bestSellers } = useBestSellers();
+
   const relatedList = useMemo(
     () => (relatedProducts?.products ?? []).filter((p) => p.id !== product?.id).slice(0, 10),
     [relatedProducts, product],
+  );
+
+  const bestSellersList = useMemo(
+    () => (bestSellers ?? []).filter((p) => p.id !== product?.id).slice(0, 10),
+    [bestSellers, product],
+  );
+
+  const featuredList = useMemo(
+    () => (featuredProducts ?? []).filter((p) => p.id !== product?.id).slice(0, 10),
+    [featuredProducts, product],
   );
 
   // Initial attribute selection on mount
@@ -573,25 +586,35 @@ export default function ProductDetailScreen() {
               <View
                 style={[
                   styles.stepper,
-                  { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
+                  { backgroundColor: colors.surfaceMuted, borderColor: colors.borderStrong },
                 ]}
               >
                 <Pressable
                   onPress={decrementQuantity}
-                  style={({ pressed }) => [styles.stepperBtn, pressed && { opacity: 0.6 }]}
+                  style={({ pressed }) => [
+                    styles.stepperBtn,
+                    { backgroundColor: colors.success },
+                    pressed && { opacity: 0.6 },
+                  ]}
                   accessibilityLabel="Decrease quantity"
                 >
-                  <Ionicons name="remove" size={18} color={colors.textPrimary} />
+                  <Ionicons name="remove" size={20} color={colors.textInverse} />
                 </Pressable>
-                <Text style={[typography.bodyStrong, styles.quantityValue, { color: colors.textPrimary }]}>
+                <View style={[styles.stepperDivider, { backgroundColor: colors.borderSubtle }]} />
+                <Text style={[typography.h3, styles.quantityValue, { color: colors.textPrimary }]}>
                   {quantity}
                 </Text>
+                <View style={[styles.stepperDivider, { backgroundColor: colors.borderSubtle }]} />
                 <Pressable
                   onPress={incrementQuantity}
-                  style={({ pressed }) => [styles.stepperBtn, pressed && { opacity: 0.6 }]}
+                  style={({ pressed }) => [
+                    styles.stepperBtn,
+                    { backgroundColor: colors.success },
+                    pressed && { opacity: 0.6 },
+                  ]}
                   accessibilityLabel="Increase quantity"
                 >
-                  <Ionicons name="add" size={18} color={colors.textPrimary} />
+                  <Ionicons name="add" size={20} color={colors.textInverse} />
                 </Pressable>
               </View>
             </View>
@@ -640,12 +663,9 @@ export default function ProductDetailScreen() {
                 {product.tags.map((tag, idx) => (
                   <View
                     key={tag.id ?? idx}
-                    style={[
-                      styles.tagChip,
-                      { backgroundColor: colors.surfaceMuted, borderColor: colors.borderSubtle },
-                    ]}
+                    style={[styles.tagChip, { backgroundColor: '#473b34', borderColor: '#1A1512' }]}
                   >
-                    <Text style={[typography.caption, { color: colors.textMuted }]}>{tag.name}</Text>
+                    <Text style={[typography.caption, { color: colors.textInverse }]}>{tag.name}</Text>
                   </View>
                 ))}
               </View>
@@ -684,7 +704,7 @@ export default function ProductDetailScreen() {
           {/* Related Products */}
           {relatedList.length > 0 && (
             <View style={styles.relatedSection}>
-              <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
+              <Text style={[typography.h3, { color: colors.textPrimary, fontWeight: '800', marginBottom: spacing.lg }]}>
                 You May Also Like
               </Text>
               <FlatList
@@ -695,6 +715,44 @@ export default function ProductDetailScreen() {
                 contentContainerStyle={{ gap: spacing.md }}
                 renderItem={({ item: rp }) => (
                   <ProductCard product={rp} width={160} showWishlist={false} />
+                )}
+              />
+            </View>
+          )}
+
+          {/* Best Sellers */}
+          {bestSellersList.length > 0 && (
+            <View style={styles.relatedSection}>
+              <Text style={[typography.h3, { color: colors.textPrimary, fontWeight: '800', marginBottom: spacing.lg }]}>
+                Best Sellers
+              </Text>
+              <FlatList
+                data={bestSellersList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(p) => p.id}
+                contentContainerStyle={{ gap: spacing.md }}
+                renderItem={({ item: bp }) => (
+                  <ProductCard product={bp} width={160} showWishlist={false} />
+                )}
+              />
+            </View>
+          )}
+
+          {/* Featured Collection */}
+          {featuredList.length > 0 && (
+            <View style={styles.relatedSection}>
+              <Text style={[typography.h3, { color: colors.textPrimary, fontWeight: '800', marginBottom: spacing.lg }]}>
+                Featured Collection
+              </Text>
+              <FlatList
+                data={featuredList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(p) => p.id}
+                contentContainerStyle={{ gap: spacing.md }}
+                renderItem={({ item: fp }) => (
+                  <ProductCard product={fp} width={160} showWishlist={false} />
                 )}
               />
             </View>
@@ -948,16 +1006,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   stepperBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  stepperDivider: {
+    width: 1,
+    height: 22,
+  },
   quantityValue: {
-    minWidth: 40,
+    minWidth: 48,
     textAlign: 'center',
   },
   statusBanner: {
