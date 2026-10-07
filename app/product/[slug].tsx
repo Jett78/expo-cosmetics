@@ -19,6 +19,7 @@ import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useCommerce } from '../../src/context/CommerceContext';
 import { useProductBySlug, useProducts } from '../../src/services/product/hooks';
 import ReviewSection from '../../src/components/ReviewSection';
+import ProductCard from '../../src/components/ProductCard/Card';
 import AddToCartBottomSheet from '../../src/components/AddToCartBottomSheet';
 import { spacing, radius, typography, shadows } from '../../src/design-system';
 import type {  ApiAttribute } from '../../src/types';
@@ -595,28 +596,7 @@ export default function ProductDetailScreen() {
                 keyExtractor={(p) => p.id}
                 contentContainerStyle={{ gap: spacing.md }}
                 renderItem={({ item: rp }) => (
-                  <Pressable
-                    onPress={() => router.push(`/product/${rp.slug}`)}
-                    style={[styles.relatedCard, { backgroundColor: colors.surface }]}
-                  >
-                    <Image
-                      source={{ uri: rp.featureImageLink?.['480'] }}
-                      style={styles.relatedImage}
-                      contentFit="contain"
-                      transition={200}
-                    />
-                    <View style={styles.relatedInfo}>
-                      <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {rp.brand?.name}
-                      </Text>
-                      <Text style={[typography.bodyStrong, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {rp.name}
-                      </Text>
-                      <Text style={[typography.priceSmall, { color: colors.textPrimary }]}>
-                        Rs. {(rp.isOfferedPriceActive && rp.offeredPrice > 0 ? rp.offeredPrice : rp.price).toLocaleString()}
-                      </Text>
-                    </View>
-                  </Pressable>
+                  <ProductCard product={rp} width={160} showWishlist={false} />
                 )}
               />
             </View>
@@ -835,18 +815,6 @@ const styles = StyleSheet.create({
   },
   relatedSection: {
     marginTop: spacing.xl,
-  },
-  relatedCard: {
-    width: 160,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  },
-  relatedImage: {
-    width: '100%',
-    height: 160,
-  },
-  relatedInfo: {
-    padding: spacing.md,
   },
   bottomBarContainer: {
     position: 'absolute',
