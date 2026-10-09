@@ -326,18 +326,10 @@ export default function PaymentScreen() {
         onSuccess: (response) => {
           refreshCart();
           clearCart();
-          Alert.alert('Order placed successfully!', 'Your order has been confirmed.', [
-            {
-              text: 'View Orders',
-              onPress: () => {
-                if (response.order?.id) {
-                  router.replace(`/orders/${response.order.id}`);
-                } else {
-                  router.replace('/orders');
-                }
-              },
-            },
-          ]);
+          router.replace({
+            pathname: '/checkout/success',
+            params: { orderId: response.order?.id ?? '' },
+          });
         },
         onError: (error: any) => {
           Alert.alert('Order Failed', error?.message ?? 'Something went wrong. Please try again.');
@@ -905,6 +897,18 @@ export default function PaymentScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen placing order overlay */}
+      {createOrder.isPending && (
+        <View style={[styles.pendingOverlay, { backgroundColor: colors.overlayStrong }]}>
+          <View style={[styles.pendingBox, { backgroundColor: colors.surface }]}>
+            <ActivityIndicator size='large' color={colors.accent} />
+            <Text style={[styles.pendingText, { color: colors.textPrimary }]}>
+              Placing your order…
+            </Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1233,5 +1237,22 @@ const styles = StyleSheet.create({
   },
   skeletonGap: {
     marginTop: spacing.xs,
+  },
+  pendingOverlay: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  pendingBox: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingHorizontal: spacing['3xl'],
+    paddingVertical: spacing['2xl'],
+    borderRadius: radius.xl,
+  },
+  pendingText: {
+    ...typography.bodyStrong,
   },
 });
