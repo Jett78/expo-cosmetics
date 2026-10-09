@@ -44,9 +44,9 @@ function WishlistScreen() {
   if (isEmpty) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + spacing.sm, borderBottomColor: colors.borderSubtle }]}>
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/account')}
+            onPress={() => router.back()}
             style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
             activeOpacity={0.6}
           >
@@ -85,18 +85,15 @@ function WishlistScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + spacing.sm, borderBottomColor: colors.borderSubtle }]}>
         <TouchableOpacity
-          onPress={() => router.push('/(tabs)/account')}
+          onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
           activeOpacity={0.6}
         >
           <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Wishlist</Text>
-        <Text style={[styles.headerCount, { color: colors.textMuted }]}>
-          {displayProducts.length} {displayProducts.length === 1 ? 'item' : 'items'}
-        </Text>
       </View>
       <FlatList
         data={displayProducts}
@@ -122,16 +119,15 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    borderBottomWidth: 1,
   },
   headerTitle: {
-    ...typography.h1,
-  },
-  headerCount: {
-    ...typography.body,
+    ...typography.h3,
+    fontWeight: '700',
   },
   backBtn: {
     width: 36,
@@ -142,11 +138,12 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
     paddingBottom: 120,
   },
   row: {
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   emptyContainer: {
     flex: 1,

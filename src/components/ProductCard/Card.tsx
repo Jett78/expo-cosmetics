@@ -167,8 +167,8 @@ export default function ProductCard({ product, width, showWishlist = true, showC
           >
             <Ionicons
               name={isFavorite(product.id) ? 'heart' : 'heart-outline'}
-              size={15}
-              color={isFavorite(product.id) ? colors.danger : colors.textPrimary}
+              size={17}
+              color={isFavorite(product.id) ? colors.accent : colors.textPrimary}
             />
           </Pressable>
         )}

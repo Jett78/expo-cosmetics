@@ -337,13 +337,13 @@ export default function ProductDetailScreen() {
           onPress={() => router.back()}
           hitSlop={12}
           style={({ pressed }) => [
-            styles.iconBtn,
+            styles.backBtn,
             { backgroundColor: colors.surfaceMuted },
             pressed && { opacity: 0.7 },
           ]}
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
         </Pressable>
 
         <View style={styles.navbarActions}>
@@ -956,6 +956,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   badge: {
     position: 'absolute',
