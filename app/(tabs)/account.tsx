@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React from 'react';
 import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -61,8 +61,15 @@ function AccountScreen() {
         style={[styles.container, { backgroundColor: colors.background }]}
         edges={['top']}
       >
-        <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
-          <Text h3 style={[styles.headerTitle, { color: colors.textPrimary }]}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+            activeOpacity={0.6}
+          >
+            <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
             Account
           </Text>
         </View>
@@ -169,8 +176,15 @@ function AccountScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
-        <Text h3 style={[styles.headerTitle, { color: colors.textPrimary }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+          activeOpacity={0.6}
+        >
+          <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           Account
         </Text>
       </View>
@@ -300,12 +314,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
   headerTitle: {
+    ...typography.h3,
     fontWeight: '700',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,

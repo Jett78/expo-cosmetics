@@ -322,7 +322,7 @@ export default function ShippingAddressScreen() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const header = (
-    <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
+    <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
       <TouchableOpacity
         onPress={() => router.back()}
         style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -332,7 +332,6 @@ export default function ShippingAddressScreen() {
         <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
       </TouchableOpacity>
       <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Shipping Details</Text>
-      <View style={styles.backBtn} />
     </View>
   );
 
@@ -768,16 +767,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },

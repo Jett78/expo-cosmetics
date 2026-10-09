@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
@@ -280,8 +280,15 @@ function ShopContent() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={[typography.h1, { color: colors.textPrimary }]}>Shop</Text>
+      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + spacing.sm, borderBottomColor: colors.borderSubtle }]}>
+        <Pressable
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Shop</Text>
       </View>
 
       {/* Search Bar */}
@@ -396,12 +403,28 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    ...typography.h3,
+    fontWeight: '700',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: spacing.xl,
+    marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.full,

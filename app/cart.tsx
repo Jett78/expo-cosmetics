@@ -67,8 +67,15 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
-        <Text h3 style={[styles.headerTitle, { color: colors.textPrimary }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+          activeOpacity={0.6}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           Shopping Bag
         </Text>
         {!isEmpty && (
@@ -238,12 +245,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
   headerTitle: {
+    ...typography.h3,
     fontWeight: '700',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCount: {
     ...typography.caption,

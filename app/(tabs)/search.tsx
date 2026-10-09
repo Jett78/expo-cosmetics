@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
@@ -143,8 +143,15 @@ function SearchScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text h3 style={[styles.title, { color: colors.textPrimary }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + spacing.sm, borderBottomColor: colors.borderSubtle }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
+          activeOpacity={0.6}
+        >
+          <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           Search
         </Text>
       </View>
@@ -252,16 +259,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
-  title: {
+  headerTitle: {
+    ...typography.h3,
     fontWeight: '700',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
