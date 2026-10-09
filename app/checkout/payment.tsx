@@ -179,7 +179,7 @@ export default function PaymentScreen() {
       setDeliveryType('');
     } else {
       setDeliveryType('Fixed');
-      setPaymentMethod((prev) => (prev === 'Cash on Delivery' ? '' : prev));
+      setPaymentMethod('Online Payment');
     }
   }, [address, isValleyCity]);
 
