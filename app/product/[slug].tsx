@@ -6,14 +6,13 @@ import {
   Pressable,
   StyleSheet,
   Dimensions,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, Link } from 'expo-router';
 import { Text } from '@rneui/themed';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useCommerce } from '../../src/context/CommerceContext';
@@ -88,7 +87,20 @@ export default function ProductDetailScreen() {
   const rawSlug = useLocalSearchParams().slug;
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : (rawSlug as string ?? '');
   const { colors } = useAppTheme();
-  const { addToCart, isFavorite, toggleFavorite } = useCommerce();
+  const insets = useSafeAreaInsets();
+  const {
+    addToCart,
+    isFavorite,
+    toggleFavorite,
+    getCartItemCount,
+    favoriteProducts,
+    isAuthenticated,
+    serverCartItemCount,
+    serverWishlistItemCount,
+  } = useCommerce();
+
+  const cartCount = isAuthenticated ? serverCartItemCount : getCartItemCount();
+  const wishlistCount = isAuthenticated ? serverWishlistItemCount : favoriteProducts.length;
 
   const { data: product, isLoading, error } = useProductBySlug(slug);
 
@@ -238,6 +250,19 @@ export default function ProductDetailScreen() {
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
+  const handleToggleWishlist = () => {
+    if (!product) return;
+    toggleFavorite({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: { uri: imageUrls[0] },
+      brand: product.brand?.name ?? '',
+      category: product.category?.name ?? '',
+      categoryId: product.categoryId,
+    } as any);
+  };
+
   const incrementQuantity = () =>
     setQuantity((q) => Math.min(q + 1, availableStock > 0 ? availableStock : 10));
   const decrementQuantity = () => setQuantity((q) => Math.max(q - 1, 1));
@@ -297,6 +322,69 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Top Navbar */}
+      <View
+        style={[
+          styles.navbar,
+          {
+            backgroundColor: colors.surface,
+            paddingTop: insets.top + spacing.sm,
+            borderBottomColor: colors.borderSubtle,
+          },
+        ]}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.iconBtn,
+            { backgroundColor: colors.surfaceMuted },
+            pressed && { opacity: 0.7 },
+          ]}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+        </Pressable>
+
+        <View style={styles.navbarActions}>
+          <Link href="/(tabs)/wishlist" asChild>
+            <Pressable
+              hitSlop={12}
+              style={StyleSheet.flatten([
+                styles.iconBtn,
+                { backgroundColor: colors.surfaceMuted },
+              ])}
+              accessibilityLabel="Wishlist"
+            >
+              <Ionicons name="heart-outline" size={20} color={colors.textPrimary} />
+              {wishlistCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.danger }]}>
+                  <Text style={styles.badgeText}>{wishlistCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </Link>
+
+          <Link href="/cart" asChild>
+            <Pressable
+              hitSlop={12}
+              style={StyleSheet.flatten([
+                styles.iconBtn,
+                { backgroundColor: colors.surfaceMuted },
+              ])}
+              accessibilityLabel="Cart"
+            >
+              <Ionicons name="cart-outline" size={20} color={colors.textPrimary} />
+              {cartCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </Link>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -334,44 +422,6 @@ export default function ProductDetailScreen() {
               ))}
             </View>
           )}
-
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [
-              styles.backButton,
-              { backgroundColor: colors.surface, borderColor: colors.borderSubtle },
-              pressed && { opacity: 0.7 },
-            ]}
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              toggleFavorite({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                image: { uri: imageUrls[0] },
-                brand: product.brand?.name ?? '',
-                category: product.category?.name ?? '',
-                categoryId: product.categoryId,
-              } as any)
-            }
-            style={({ pressed }) => [
-              styles.wishlistButton,
-              { backgroundColor: colors.surface, borderColor: colors.borderSubtle },
-              pressed && { opacity: 0.7 },
-            ]}
-            accessibilityLabel={isFavorite(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-          >
-            <Ionicons
-              name={isFavorite(product.id) ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isFavorite(product.id) ? colors.danger : colors.textPrimary}
-            />
-          </Pressable>
         </View>
 
         {/* Product Info */}
@@ -427,7 +477,7 @@ export default function ProductDetailScreen() {
           <View style={styles.priceRow}>
             <Text
               style={[
-                typography.priceLarge,
+                typography.price,
                 { color: colors.accent },
               ]}
             >
@@ -771,13 +821,30 @@ export default function ProductDetailScreen() {
             </Text>
             <Text
               style={[
-                typography.priceLarge,
+                typography.price,
                 { color: colors.accent, marginTop: spacing.xxs },
               ]}
             >
               Rs. {(displayPrice * quantity).toLocaleString()}
             </Text>
           </View>
+
+          <Pressable
+            onPress={handleToggleWishlist}
+            style={({ pressed }) => [
+              styles.iconBtn,
+              { backgroundColor: colors.surfaceMuted },
+              pressed && { opacity: 0.7 },
+            ]}
+            accessibilityLabel={isFavorite(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Ionicons
+              name={isFavorite(product.id) ? 'heart' : 'heart-outline'}
+              size={20}
+              color={isFavorite(product.id) ? colors.danger : colors.textPrimary}
+            />
+          </Pressable>
+
           {availableStock > 0 && product.isActive ? (
             <Pressable
               onPress={handleAddToCart}
@@ -869,27 +936,42 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: radius.full,
   },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 56 : 40,
-    left: spacing.lg,
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
   },
-  wishlistButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 56 : 40,
-    right: spacing.lg,
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  navbarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   infoContainer: {
     marginTop: -spacing['2xl'],
