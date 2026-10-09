@@ -892,7 +892,12 @@ export default function PaymentScreen() {
             ) : (
               <>
                 <Ionicons name='checkmark-circle-outline' size={20} color='#FFFFFF' />
-                <Text style={styles.placeOrderBtnText}>
+                <Text
+                  style={styles.placeOrderBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   Place Order — Rs. {total.toLocaleString()}
                 </Text>
               </>
@@ -1161,7 +1166,7 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
   },
   totalValueStrong: {
-    ...typography.priceLarge,
+    ...typography.price,
   },
   totalDivider: {
     height: StyleSheet.hairlineWidth,
@@ -1185,6 +1190,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     textTransform: 'none',
+    flexShrink: 0,
   },
   centerContent: {
     alignItems: 'center',
