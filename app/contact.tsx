@@ -181,7 +181,7 @@ export default function ContactScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -191,7 +191,6 @@ export default function ContactScreen() {
           <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Contact Us</Text>
-        <View style={styles.backBtn} />
       </View>
 
       <KeyboardAvoidingView
@@ -254,9 +253,9 @@ export default function ContactScreen() {
                     <>
                       <View
                         key='icon'
-                        style={[styles.rowIcon, { backgroundColor: colors.accentLight }]}
+                        style={[styles.rowIcon, { backgroundColor: colors.accent }]}
                       >
-                        <Ionicons name={row.icon} size={18} color={colors.accent} />
+                        <Ionicons name={row.icon} size={18} color="#FFFFFF" />
                       </View>
                       <View key='text' style={styles.rowText}>
                         <Text style={[styles.rowLabel, { color: colors.textMuted }]}>
@@ -309,12 +308,16 @@ export default function ContactScreen() {
                         />
                       ) : null}
                       <WebView
-                        source={{ html: mapHtml }}
+                        source={{ html: mapHtml, baseUrl: 'https://www.google.com' }}
                         originWhitelist={['*']}
                         javaScriptEnabled
                         domStorageEnabled
                         scrollEnabled={false}
                         onLoadEnd={() => setMapLoaded(true)}
+                        onError={(syntheticEvent) => {
+                          const { nativeEvent } = syntheticEvent;
+                          console.warn('WebView error:', nativeEvent);
+                        }}
                         style={[styles.mapWebView, { opacity: mapLoaded ? 1 : 0 }]}
                       />
                     </>
@@ -589,10 +592,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
   backBtn: {
     width: 36,
@@ -603,6 +607,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h3,
+    fontWeight: '700',
   },
   content: {
     padding: spacing.lg,

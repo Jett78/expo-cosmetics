@@ -198,7 +198,7 @@ export default function OrdersScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -207,7 +207,6 @@ export default function OrdersScreen() {
           <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Orders</Text>
-        <View style={styles.backBtn} />
       </View>
 
       {isLoading ? (
@@ -285,10 +284,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
   backBtn: {
     width: 36,
@@ -299,6 +299,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h3,
+    fontWeight: '700',
   },
   listContent: {
     padding: spacing.lg,

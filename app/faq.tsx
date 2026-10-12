@@ -19,7 +19,7 @@ export default function FaqScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -29,7 +29,6 @@ export default function FaqScreen() {
           <Ionicons name='chevron-back' size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>FAQ</Text>
-        <View style={styles.backBtn} />
       </View>
 
       {isLoading ? (
@@ -104,25 +103,6 @@ export default function FaqScreen() {
               answer: faq.answer,
             }))}
           />
-
-          <View style={[styles.helpCard, { backgroundColor: colors.accentLight }]}>
-            <Ionicons name='help-buoy-outline' size={22} color={colors.accent} />
-            <View style={styles.helpTextBlock}>
-              <Text style={[styles.helpTitle, { color: colors.textPrimary }]}>
-                Still have a question?
-              </Text>
-              <Text style={[styles.helpSubtitle, { color: colors.textSecondary }]}>
-                Our team is happy to help you with anything you need.
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.helpBtn, { backgroundColor: colors.accent }]}
-              activeOpacity={0.85}
-              onPress={() => router.push('/contact')}
-            >
-              <Text style={styles.helpBtnText}>Ask us</Text>
-            </TouchableOpacity>
-          </View>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -136,10 +116,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+    borderBottomWidth: 1,
   },
   backBtn: {
     width: 36,
@@ -150,6 +131,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h3,
+    fontWeight: '700',
   },
   content: {
     padding: spacing.lg,
