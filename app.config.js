@@ -43,6 +43,7 @@ module.exports = {
         backgroundColor: "#FDF8F6",
       },
       package: "com.la.cosmetics",
+      googleServicesFile: "./google-services.json",
       permissions: ["CAMERA", "READ_MEDIA_IMAGES"],
       blockedPermissions: ["android.permission.RECORD_AUDIO"],
     },
@@ -55,6 +56,14 @@ module.exports = {
       "expo-web-browser",
       ...(IS_DEV_CLIENT ? ["expo-dev-client"] : []),
       "expo-splash-screen",
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/icon.png",
+          color: "#FDF8F6",
+          defaultChannel: "orders",
+        },
+      ],
       [
         "expo-image-picker",
         {

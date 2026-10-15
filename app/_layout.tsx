@@ -1,8 +1,3 @@
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider } from '@rneui/themed';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useFonts } from '@expo-google-fonts/manrope/useFonts';
 import { Manrope_200ExtraLight } from '@expo-google-fonts/manrope/200ExtraLight';
 import { Manrope_300Light } from '@expo-google-fonts/manrope/300Light';
 import { Manrope_400Regular } from '@expo-google-fonts/manrope/400Regular';
@@ -10,20 +5,49 @@ import { Manrope_500Medium } from '@expo-google-fonts/manrope/500Medium';
 import { Manrope_600SemiBold } from '@expo-google-fonts/manrope/600SemiBold';
 import { Manrope_700Bold } from '@expo-google-fonts/manrope/700Bold';
 import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope/800ExtraBold';
+import { useFonts } from '@expo-google-fonts/manrope/useFonts';
+import { ThemeProvider } from '@rneui/themed';
+import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { CommerceProvider } from '../src/context/CommerceContext';
+import { useMemo } from 'react';
+import LoginModal from '../src/components/LoginModal';
 import { AppLoadingProvider } from '../src/context/AppLoadingContext';
+import { CommerceProvider } from '../src/context/CommerceContext';
+import { useCommerce } from '../src/context/CommerceContext';
 import { TabBarVisibilityProvider } from '../src/context/TabBarVisibilityContext';
 import { lightColors } from '../src/design-system';
 import QueryProvider from '../src/providers/QueryProvider';
-import { useMemo } from 'react';
-import LoginModal from '../src/components/LoginModal';
-import { useCommerce } from '../src/context/CommerceContext';
+import { useNotificationNavigation, useNotifications } from '../src/services/notifications';
+import type { NotificationData } from '../src/services/notifications';
 
 function LoginModalWrapper() {
   const { loginModalVisible, hideLoginModal } = useCommerce();
 
   return <LoginModal visible={loginModalVisible} onClose={hideLoginModal} />;
+}
+
+function NotificationSetup() {
+  const router = useRouter();
+
+  useNotifications();
+
+  useNotificationNavigation((data: NotificationData) => {
+    const orderId = typeof data.orderId === 'string' ? data.orderId : undefined;
+    const deepLink = typeof data.deepLink === 'string' ? data.deepLink : undefined;
+
+    if (deepLink) {
+      router.push(deepLink as never);
+      return;
+    }
+
+    if (orderId) {
+      router.push(`/orders/${orderId}`);
+    }
+  });
+
+  return null;
 }
 
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
@@ -88,10 +112,11 @@ export default function RootLayout() {
                     contentStyle: { backgroundColor: lightColors.background },
                   }}
                 >
-                  <Stack.Screen name="product/[slug]" options={{ animation: 'slide_from_right' }} />
+                  <Stack.Screen name='product/[slug]' options={{ animation: 'slide_from_right' }} />
                 </Stack>
-                <StatusBar style="dark" />
+                <StatusBar style='dark' />
                 <LoginModalWrapper />
+                <NotificationSetup />
               </AppThemeProvider>
             </TabBarVisibilityProvider>
           </CommerceProvider>

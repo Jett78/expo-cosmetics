@@ -2,7 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@rneui/themed';
 import { Link, router } from 'expo-router';
 import React from 'react';
-import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Skeleton } from '../../src/components/Skeleton';
 import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
@@ -11,6 +19,7 @@ import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { resolveAvatarUrl } from '../../src/services/auth/api';
 import { useUserDetails } from '../../src/services/auth/hooks';
+import { useNotificationPreference } from '../../src/services/notifications';
 
 type MenuItem = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -37,6 +46,11 @@ function AccountScreen() {
   const { colors } = useAppTheme();
   const { user, logout, isAuthenticated, token, updateUser } = useCommerce();
   const { data: profile, isPending: profileLoading } = useUserDetails(token);
+  const {
+    enabled: pushEnabled,
+    checking: pushChecking,
+    toggle: togglePush,
+  } = useNotificationPreference();
 
   const profileAvatar = resolveAvatarUrl(profile?.avatar, profile?.avatarLink);
 
@@ -294,6 +308,31 @@ function AccountScreen() {
           })}
         </View>
 
+        <View style={[styles.menuSection, { backgroundColor: colors.surface }]}>
+          <View style={styles.menuRow}>
+            <View style={styles.menuLeft}>
+              <Ionicons name='notifications-outline' size={22} color={colors.textPrimary} />
+              <View style={styles.switchTextColumn}>
+                <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>
+                  Push Notifications
+                </Text>
+                <Text style={[styles.menuCaption, { color: colors.textSecondary }]}>
+                  Order updates &amp; delivery alerts
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={pushEnabled}
+              onValueChange={togglePush}
+              disabled={pushChecking}
+              trackColor={{ false: colors.borderStrong, true: colors.accent }}
+              thumbColor='#FFFFFF'
+              ios_backgroundColor={colors.borderStrong}
+              accessibilityLabel='Push notifications'
+            />
+          </View>
+        </View>
+
         <TouchableOpacity
           style={[styles.signOutButton, { borderColor: colors.borderStrong }]}
           activeOpacity={0.7}
@@ -392,6 +431,13 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     ...typography.bodyStrong,
+  },
+  menuCaption: {
+    ...typography.caption,
+    marginTop: spacing.xxs,
+  },
+  switchTextColumn: {
+    gap: 2,
   },
   signOutButton: {
     flexDirection: 'row',

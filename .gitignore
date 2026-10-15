@@ -21,3 +21,5 @@ assets/models/mobilenet_v2_1.0_224.tflite
 # Native
 android/
 ios/
+# Firebase service account private key (secret)
+*-firebase-adminsdk-*.json
