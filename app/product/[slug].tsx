@@ -910,11 +910,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
   },
-  backBtn: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-  },
   imageContainer: {
     position: 'relative',
   },

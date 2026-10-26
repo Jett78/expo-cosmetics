@@ -83,7 +83,9 @@ export default function FaqScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={() => refetch()}
+              onRefresh={() => {
+                refetch();
+              }}
               tintColor={colors.accent}
               colors={[colors.accent]}
             />

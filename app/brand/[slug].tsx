@@ -83,7 +83,14 @@ export default function BrandScreen() {
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor={colors.accent} colors={[colors.accent]} />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => {
+              refetch();
+            }}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
         }
         ListEmptyComponent={
           <View style={styles.empty}>

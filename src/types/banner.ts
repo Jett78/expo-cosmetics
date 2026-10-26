@@ -3,7 +3,7 @@ export type ApiBanner = {
   title: string;
   description: string;
   image: string;
-  type: 'HERO' | 'MID' | 'BOTTOM';
+  type: 'HERO' | 'MID' | 'BOTTOM' | 'POPUP';
   buttonText: string;
   buttonLink: string;
   isActive: boolean;

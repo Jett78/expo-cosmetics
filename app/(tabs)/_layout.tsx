@@ -49,7 +49,11 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons
+              name="home-outline"
+              size={size}
+              color={(color ?? undefined) as string | undefined}
+            />
           ),
         }}
       />
@@ -58,7 +62,11 @@ export default function TabLayout() {
         options={{
           title: 'Shop',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pricetags-outline" size={size} color={color} />
+            <Ionicons
+              name="pricetags-outline"
+              size={size}
+              color={(color ?? undefined) as string | undefined}
+            />
           ),
         }}
       />
@@ -67,7 +75,11 @@ export default function TabLayout() {
         options={{
           title: 'Search',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+            <Ionicons
+              name="search-outline"
+              size={size}
+              color={(color ?? undefined) as string | undefined}
+            />
           ),
         }}
       />
@@ -76,7 +88,11 @@ export default function TabLayout() {
         options={{
           title: 'Wishlist',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart-outline" size={size} color={color} />
+            <Ionicons
+              name="heart-outline"
+              size={size}
+              color={(color ?? undefined) as string | undefined}
+            />
           ),
         }}
       />
@@ -85,7 +101,11 @@ export default function TabLayout() {
         options={{
           title: 'Account',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons
+              name="person-outline"
+              size={size}
+              color={(color ?? undefined) as string | undefined}
+            />
           ),
         }}
       />

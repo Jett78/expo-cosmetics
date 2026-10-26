@@ -7,25 +7,110 @@ import { Manrope_700Bold } from '@expo-google-fonts/manrope/700Bold';
 import { Manrope_800ExtraBold } from '@expo-google-fonts/manrope/800ExtraBold';
 import { useFonts } from '@expo-google-fonts/manrope/useFonts';
 import { ThemeProvider } from '@rneui/themed';
+import { BlurTargetView, type BlurViewProps } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useMemo } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentRef,
+  type RefObject,
+} from 'react';
 import LoginModal from '../src/components/LoginModal';
+import PopupBannerModal from '../src/components/banners/PopupBannerModal';
 import { AppLoadingProvider } from '../src/context/AppLoadingContext';
 import { CommerceProvider } from '../src/context/CommerceContext';
 import { useCommerce } from '../src/context/CommerceContext';
 import { TabBarVisibilityProvider } from '../src/context/TabBarVisibilityContext';
 import { lightColors } from '../src/design-system';
 import QueryProvider from '../src/providers/QueryProvider';
+import { useActiveBanners } from '../src/services/banner/hooks';
 import { useNotificationNavigation, useNotifications } from '../src/services/notifications';
 import type { NotificationData } from '../src/services/notifications';
+import type { ApiBanner } from '../src/types/banner';
+
+export const unstable_settings = {
+  anchor: 'index',
+};
 
 function LoginModalWrapper() {
   const { loginModalVisible, hideLoginModal } = useCommerce();
 
   return <LoginModal visible={loginModalVisible} onClose={hideLoginModal} />;
+}
+
+let popupShownThisSession = false;
+
+const POPUP_FIRST_DELAY_MS = 2000;
+const POPUP_SWAP_DELAY_MS = 300;
+
+function PopupBannerWrapper({ blurTarget }: { blurTarget: BlurViewProps['blurTarget'] }) {
+  const { data: banners, isLoading } = useActiveBanners(10, 'POPUP');
+  const [currentBanner, setCurrentBanner] = useState<ApiBanner | null>(null);
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueRef = useRef<ApiBanner[]>([]);
+  const queueIndexRef = useRef(0);
+  const startedRef = useRef(false);
+
+  const popupBanners = useMemo(
+    () => (banners ?? []).filter((b) => b.type === 'POPUP'),
+    [banners]
+  );
+
+  const showNextPopup = useCallback(() => {
+    const next = queueRef.current[queueIndexRef.current];
+
+    if (!next) {
+      setCurrentBanner(null);
+      setVisible(false);
+      return;
+    }
+
+    queueIndexRef.current += 1;
+    setCurrentBanner(next);
+    setVisible(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setVisible(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(showNextPopup, POPUP_SWAP_DELAY_MS);
+  }, [showNextPopup]);
+
+  useEffect(() => {
+    if (startedRef.current || isLoading || popupBanners.length === 0 || popupShownThisSession) {
+      return;
+    }
+
+    startedRef.current = true;
+    popupShownThisSession = true;
+    timerRef.current = setTimeout(() => {
+      queueRef.current = popupBanners;
+      queueIndexRef.current = 0;
+      showNextPopup();
+    }, POPUP_FIRST_DELAY_MS);
+  }, [isLoading, popupBanners, showNextPopup]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <PopupBannerModal
+      visible={visible}
+      banner={currentBanner}
+      onClose={handleClose}
+      blurTarget={blurTarget}
+    />
+  );
 }
 
 function NotificationSetup() {
@@ -93,6 +178,7 @@ export default function RootLayout() {
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
+  const blurTargetRef = useRef<ComponentRef<typeof BlurTargetView>>(null);
 
   if (!fontsLoaded) {
     return null;
@@ -100,28 +186,33 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <QueryProvider>
-        <AppLoadingProvider>
-          <CommerceProvider>
-            <TabBarVisibilityProvider>
-              <AppThemeProvider>
-                <Stack
-                  initialRouteName='index'
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: lightColors.background },
-                  }}
-                >
-                  <Stack.Screen name='product/[slug]' options={{ animation: 'slide_from_right' }} />
-                </Stack>
-                <StatusBar style='dark' />
-                <LoginModalWrapper />
-                <NotificationSetup />
-              </AppThemeProvider>
-            </TabBarVisibilityProvider>
-          </CommerceProvider>
-        </AppLoadingProvider>
-      </QueryProvider>
+      <BlurTargetView ref={blurTargetRef} style={{ flex: 1 }}>
+        <QueryProvider>
+          <AppLoadingProvider>
+            <CommerceProvider>
+              <TabBarVisibilityProvider>
+                <AppThemeProvider>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: lightColors.background },
+                    }}
+                  >
+                    <Stack.Screen
+                      name='product/[slug]'
+                      options={{ animation: 'slide_from_right' }}
+                    />
+                  </Stack>
+                  <StatusBar style='dark' />
+                  <LoginModalWrapper />
+                  <PopupBannerWrapper blurTarget={blurTargetRef} />
+                  <NotificationSetup />
+                </AppThemeProvider>
+              </TabBarVisibilityProvider>
+            </CommerceProvider>
+          </AppLoadingProvider>
+        </QueryProvider>
+      </BlurTargetView>
     </SafeAreaProvider>
   );
 }

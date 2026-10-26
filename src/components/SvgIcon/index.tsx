@@ -62,7 +62,7 @@ const SvgIcon = (props: IconProps) => {
     </svg>
     `;
 
-  const iconName = {
+  const iconName: Record<string, string> = {
     google: googleLogoSvg,
     facebook: facebookLogoSvg,
     home: homeSvg,

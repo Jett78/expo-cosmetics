@@ -228,7 +228,9 @@ function SearchScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={() => refetch()}
+              onRefresh={() => {
+                refetch();
+              }}
               tintColor={colors.accent}
               colors={[colors.accent]}
             />
@@ -244,7 +246,7 @@ function SearchScreen() {
                   Try a different search term or browse popular searches
                 </Text>
               </View>
-            ) : null
+            ) : undefined
           }
         />
       )}

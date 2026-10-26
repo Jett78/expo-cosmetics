@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -35,7 +36,7 @@ export default function VerifyEmailScreen() {
   const [error, setError] = useState('');
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [timer, setTimer] = useState(RESEND_COOLDOWN);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<Array<TextInputInstance | null>>([]);
 
   useEffect(() => {
     if (!email) {

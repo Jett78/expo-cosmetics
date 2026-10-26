@@ -425,7 +425,9 @@ export default function OrderDetailScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={() => refetch()}
+              onRefresh={() => {
+                refetch();
+              }}
               tintColor={colors.accent}
               colors={[colors.accent]}
             />

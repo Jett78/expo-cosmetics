@@ -11,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  type TextInputInstance,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -53,7 +54,7 @@ export default function ResetPasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<'newPassword' | 'confirmPassword' | null>(null);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<Array<TextInputInstance | null>>([]);
 
   useEffect(() => {
     if (!email) {
