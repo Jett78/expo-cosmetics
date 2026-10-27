@@ -17,7 +17,7 @@ module.exports = {
     slug: process.env.EXPO_PUBLIC_APP_SLUG ?? "la-cosmetics",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/la-cos.png",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     scheme: "la-cosmetics",
@@ -39,7 +39,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: "./assets/la-cos.png",
         backgroundColor: "#FDF8F6",
       },
       package: "com.la.cosmetics",
@@ -48,7 +48,7 @@ module.exports = {
       blockedPermissions: ["android.permission.RECORD_AUDIO"],
     },
     web: {
-      favicon: "./assets/favicon.png",
+      favicon: "./assets/la-cos.png",
       bundler: "metro",
     },
     plugins: [
