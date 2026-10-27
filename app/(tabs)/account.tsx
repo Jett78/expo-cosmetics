@@ -3,6 +3,7 @@ import { Text } from '@rneui/themed';
 import { Link, router } from 'expo-router';
 import React from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -31,7 +32,6 @@ const menuItems: MenuItem[] = [
   { icon: 'key-outline', label: 'Change Password', href: '/account/change-password' },
   { icon: 'receipt-outline', label: 'My Orders', href: '/orders' },
   { icon: 'heart-outline', label: 'Wishlist', href: '/(tabs)/wishlist' },
-  { icon: 'location-outline', label: 'Addresses', href: '/checkout/address' },
   { icon: 'help-circle-outline', label: 'Help & FAQ', href: '/faq' },
   { icon: 'call-outline', label: 'Contact Us', href: '/contact' },
 ];
@@ -51,6 +51,8 @@ function AccountScreen() {
     checking: pushChecking,
     toggle: togglePush,
   } = useNotificationPreference();
+  
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const profileAvatar = resolveAvatarUrl(profile?.avatar, profile?.avatarLink);
 
@@ -65,7 +67,21 @@ function AccountScreen() {
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out of your account?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: logout },
+      { 
+        text: 'Sign Out', 
+        style: 'destructive', 
+        onPress: async () => {
+          setIsLoggingOut(true);
+          try {
+            await logout();
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } catch (error) {
+            console.error('Logout error:', error);
+          } finally {
+            setIsLoggingOut(false);
+          }
+        }
+      },
     ]);
   };
 
@@ -337,9 +353,19 @@ function AccountScreen() {
           style={[styles.signOutButton, { borderColor: colors.borderStrong }]}
           activeOpacity={0.7}
           onPress={handleSignOut}
+          disabled={isLoggingOut}
         >
-          <Ionicons name='log-out-outline' size={20} color={colors.danger} />
-          <Text style={[styles.signOutText, { color: colors.danger }]}>Sign Out</Text>
+          {isLoggingOut ? (
+            <>
+              <ActivityIndicator size="small" color={colors.danger} />
+              <Text style={[styles.signOutText, { color: colors.danger }]}>Signing Out...</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name='log-out-outline' size={20} color={colors.danger} />
+              <Text style={[styles.signOutText, { color: colors.danger }]}>Sign Out</Text>
+            </>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -447,6 +473,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1.5,
     gap: spacing.sm,
+    marginBottom: spacing['4xl'],
   },
   signOutText: {
     ...typography.button,
