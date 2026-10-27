@@ -18,7 +18,6 @@ export default function SplashLayout() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [dataReady, setDataReady] = useState(false);
-  const [animationDone, setAnimationDone] = useState(false);
   const navigationTriggered = useRef(false);
 
   const scale = useSharedValue(0.6);
@@ -43,37 +42,23 @@ export default function SplashLayout() {
 
     prefetchHomepageData(queryClient).then(() => setDataReady(true));
 
-    logoOpacity.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
-    scale.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
-
-    const fadeOutTimer = setTimeout(() => {
-      logoOpacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.cubic) });
-    }, 2000);
-
-    const screenTimer = setTimeout(() => {
-      screenOpacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.cubic) });
-    }, 2500);
-
-    const doneTimer = setTimeout(() => {
-      setAnimationDone(true);
-    }, 2900);
-
-    return () => {
-      clearTimeout(fadeOutTimer);
-      clearTimeout(screenTimer);
-      clearTimeout(doneTimer);
-    };
+    logoOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
+    scale.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
   }, [ready]);
 
   useEffect(() => {
-    if (!dataReady || !animationDone || navigationTriggered.current) return;
+    if (!dataReady || navigationTriggered.current) return;
 
     navigationTriggered.current = true;
 
-    SplashScreen.hideAsync().then(() => {
-      router.replace('/(tabs)');
-    });
-  }, [dataReady, animationDone]);
+    screenOpacity.value = withTiming(0, { duration: 300, easing: Easing.in(Easing.cubic) });
+
+    setTimeout(() => {
+      SplashScreen.hideAsync().then(() => {
+        router.replace('/(tabs)');
+      });
+    }, 300);
+  }, [dataReady]);
 
   if (!ready) return null;
 

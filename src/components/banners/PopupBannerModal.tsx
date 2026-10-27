@@ -65,14 +65,14 @@ export default function PopupBannerModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <BlurView
+        blurTarget={blurTarget ?? undefined}
+        blurMethod='dimezisBlurView'
+        intensity={30}
+        tint='dark'
+        style={StyleSheet.absoluteFill}
+      />
       <Pressable style={styles.overlay} onPress={onClose}>
-        <BlurView
-          blurTarget={blurTarget ?? undefined}
-          blurMethod='dimezisBlurView'
-          intensity={30}
-          tint='dark'
-          style={StyleSheet.absoluteFill}
-        />
         <View style={[styles.card, { backgroundColor: colors.surface, width: cardWidth }]}>
           <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
             <Text style={[typography.button, { color: colors.textSecondary }]}>✕</Text>

@@ -230,11 +230,42 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     loadAuth();
   }, []);
 
+  const handleLogout = useCallback(async () => {
+    if (token) {
+      try {
+        await logoutUser(token);
+      } catch {
+        // Ignore errors, clear local data anyway
+      }
+    }
+    
+    try {
+      if (Platform.OS !== 'web') {
+        signOutNative();
+      }
+    } catch (error) {
+      // Silently fail if Google sign-in not available
+    }
+    
+    setUser(null);
+    setToken(null);
+    setCartItems([]);
+    setFavoriteIds([]);
+    setServerCartItems([]);
+    setServerWishlistItems([]);
+    setSelectedShippingAddressState(null);
+    
+    await tokenManager.clearTokens();
+    await SecureStore.deleteItemAsync(AUTH_USER_KEY);
+    
+    queryClient.clear();
+  }, [token]);
+
   useEffect(() => {
     setLogoutCallback(() => {
-      logout();
+      handleLogout();
     });
-  }, []);
+  }, [handleLogout]);
 
   useEffect(() => {
     if (token) {
