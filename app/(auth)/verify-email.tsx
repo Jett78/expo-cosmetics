@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useResendOtpMutation, useVerifyEmailOtpMutation } from '../../src/services/auth/hooks';
+import { useCommerce } from '../../src/context/CommerceContext';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 30;
@@ -28,6 +29,7 @@ export default function VerifyEmailScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ email?: string }>();
   const email = typeof params.email === 'string' ? params.email : undefined;
+  const { login } = useCommerce();
 
   const verifyMutation = useVerifyEmailOtpMutation();
   const resendMutation = useResendOtpMutation();
@@ -98,10 +100,17 @@ export default function VerifyEmailScreen() {
     verifyMutation.mutate(
       { email, otp: code },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          login(
+            data.data.email,
+            data.data.name,
+            data.data.accessToken,
+            data.data.refreshToken,
+            data.data.expiresIn
+          );
           router.replace({
-            pathname: '/(auth)/login',
-            params: { email, verified: '1' },
+            pathname: '/(tabs)',
+            params: { verified: 'true' },
           });
         },
         onError: (err: any) => {

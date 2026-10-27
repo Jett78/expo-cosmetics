@@ -25,6 +25,9 @@ export type AuthResponse = {
   statusCode: string;
   message: string;
   data: AuthUser & {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
     token: string;
   };
 };
@@ -57,6 +60,9 @@ export type VerifyOtpResponse = {
     id: string;
     email: string;
     name: string;
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
     token: string;
   };
 };
@@ -80,6 +86,9 @@ export type ResetPasswordResponse = {
   message: string;
   data?: {
     email: string;
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
     token: string;
   };
 };
@@ -195,4 +204,32 @@ export async function changePassword(
   token: string
 ): Promise<ChangePasswordResponse> {
   return apiPatch<ChangePasswordResponse>('/auth/change-password', payload, token);
+}
+
+export type RefreshTokenResponse = {
+  success: boolean;
+  statusCode: string;
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  };
+};
+
+export type LogoutResponse = {
+  success: boolean;
+  statusCode: string;
+  message: string;
+  data?: {};
+};
+
+export async function refreshAccessToken(
+  refreshToken: string
+): Promise<RefreshTokenResponse> {
+  return apiPost<RefreshTokenResponse>('/auth/refresh', { refreshToken });
+}
+
+export async function logoutUser(token: string): Promise<LogoutResponse> {
+  return apiPost<LogoutResponse>('/auth/logout', {}, token);
 }

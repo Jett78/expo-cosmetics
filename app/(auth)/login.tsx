@@ -57,7 +57,9 @@ export default function LoginScreen() {
             login(
               data.data.email,
               data.data.name,
-              data.data.token,
+              data.data.accessToken,
+              data.data.refreshToken,
+              data.data.expiresIn,
               resolveAvatarUrl(data.data.avatar, data.data.avatarLink)
             );
             router.replace('/(tabs)');
@@ -79,7 +81,9 @@ export default function LoginScreen() {
         login(
           data.data.email,
           data.data.name,
-          data.data.token,
+          data.data.accessToken,
+          data.data.refreshToken,
+          data.data.expiresIn,
           resolveAvatarUrl(data.data.avatar, data.data.avatarLink)
         );
         router.replace('/(tabs)');

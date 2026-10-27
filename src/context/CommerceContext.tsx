@@ -16,6 +16,9 @@ import type {
   DeleteCartItemResponse,
 } from '../types/api-cart';
 import type { ShippingAddress } from '../types/shipping-address';
+import { tokenManager } from '../services/auth/tokenManager';
+import { setLogoutCallback } from '../lib/api-client';
+import { logoutUser } from '../services/auth/api';
 
 export type SortId = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular';
 
@@ -78,10 +81,10 @@ type CommerceContextValue = {
   isAuthenticated: boolean;
   authLoaded: boolean;
   isFavorite: (productId: string) => boolean;
-  login: (email: string, name: string, authToken?: string, avatar?: string | null) => void;
+  login: (email: string, name: string, accessToken: string, refreshToken: string, expiresIn: number, avatar?: string | null) => void;
   logout: () => void;
-  register: (email: string, name: string, token?: string) => void;
-  googleLogin: (name: string, email: string, token: string) => void;
+  register: (email: string, name: string, accessToken: string, refreshToken: string, expiresIn: number) => void;
+  googleLogin: (name: string, email: string, accessToken: string, refreshToken: string, expiresIn: number) => void;
   updateUser: (name: string, email: string, avatar?: string | null) => void;
   token: string | null;
   resetCheckout: () => void;
@@ -212,7 +215,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     const loadAuth = async () => {
       try {
-        const storedToken = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+        const storedToken = await tokenManager.getAccessToken();
         const storedUser = await SecureStore.getItemAsync(AUTH_USER_KEY);
         if (storedToken && storedUser) {
           setToken(storedToken);
@@ -225,6 +228,12 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       }
     };
     loadAuth();
+  }, []);
+
+  useEffect(() => {
+    setLogoutCallback(() => {
+      logout();
+    });
   }, []);
 
   useEffect(() => {
@@ -458,20 +467,31 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
       isAuthenticated: Boolean(user),
       authLoaded,
       isFavorite,
-      login: (email, name, authToken, avatar) => {
-        const userData: CommerceUser =
-          avatar !== undefined ? { email, name, avatar } : { email, name };
+      login: async (email, name, accessToken, refreshToken, expiresIn, avatar) => {
+        const userData: CommerceUser = { email, name, avatar: avatar ?? undefined };
         setUser(userData);
-        if (authToken) {
-          setToken(authToken);
-          SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
-          SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
-        }
+        setToken(accessToken);
+        
+        await tokenManager.saveTokens(accessToken, refreshToken, expiresIn);
+        await SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData));
       },
-      logout: () => {
-        if (Platform.OS !== 'web') {
-          signOutNative();
+      logout: async () => {
+        if (token) {
+          try {
+            await logoutUser(token);
+          } catch {
+            // Ignore errors, clear local data anyway
+          }
         }
+        
+        try {
+          if (Platform.OS !== 'web') {
+            signOutNative();
+          }
+        } catch (error) {
+          // Silently fail if Google sign-in not available
+        }
+        
         setUser(null);
         setToken(null);
         setCartItems([]);
@@ -481,24 +501,29 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         setCheckoutComplete(false);
         setSelectedShippingAddressState(null);
         queryClient.removeQueries({ queryKey: ['profile'] });
-        SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {});
-        SecureStore.deleteItemAsync(AUTH_USER_KEY).catch(() => {});
-      },
-      register: (email, name, authToken) => {
-        const userData = { email, name };
-        setUser(userData);
-        if (authToken) {
-          setToken(authToken);
-          SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
-          SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
+        
+        try {
+          await tokenManager.clearTokens();
+          await SecureStore.deleteItemAsync(AUTH_USER_KEY);
+        } catch {
+          // Ignore storage errors
         }
       },
-      googleLogin: (name, email, authToken) => {
+      register: async (email, name, accessToken, refreshToken, expiresIn) => {
         const userData = { email, name };
         setUser(userData);
-        setToken(authToken);
-        SecureStore.setItemAsync(AUTH_TOKEN_KEY, authToken).catch(() => {});
-        SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData)).catch(() => {});
+        setToken(accessToken);
+        
+        await tokenManager.saveTokens(accessToken, refreshToken, expiresIn);
+        await SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData));
+      },
+      googleLogin: async (name, email, accessToken, refreshToken, expiresIn) => {
+        const userData = { email, name };
+        setUser(userData);
+        setToken(accessToken);
+        
+        await tokenManager.saveTokens(accessToken, refreshToken, expiresIn);
+        await SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(userData));
       },
       updateUser,
       token,

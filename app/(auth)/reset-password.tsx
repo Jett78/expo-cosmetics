@@ -21,6 +21,7 @@ import * as yup from 'yup';
 import { radius, spacing, typography } from '../../src/design-system';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useForgotPasswordMutation, useResetPasswordMutation } from '../../src/services/auth/hooks';
+import { useCommerce } from '../../src/context/CommerceContext';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 30;
@@ -43,6 +44,7 @@ export default function ResetPasswordScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ email?: string }>();
   const email = typeof params.email === 'string' ? params.email : undefined;
+  const { login } = useCommerce();
 
   const resetMutation = useResetPasswordMutation();
   const resendMutation = useForgotPasswordMutation();
@@ -116,10 +118,17 @@ export default function ResetPasswordScreen() {
     resetMutation.mutate(
       { email, otp: code, newPassword: values.newPassword },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          login(
+            data.data.email,
+            email || data.data.email,
+            data.data.accessToken,
+            data.data.refreshToken,
+            data.data.expiresIn
+          );
           router.replace({
-            pathname: '/(auth)/login',
-            params: { reset: '1', email },
+            pathname: '/(tabs)',
+            params: { reset: 'true' },
           });
         },
         onError: (err: any) => {

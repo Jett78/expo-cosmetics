@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import { tokenManager } from '../services/auth/tokenManager';
 
 export class ApiError extends Error {
   statusCode: number;
@@ -8,6 +9,12 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.statusCode = statusCode;
   }
+}
+
+let logoutCallback: (() => void) | null = null;
+
+export function setLogoutCallback(callback: () => void) {
+  logoutCallback = callback;
 }
 
 export async function apiGet<T>(
@@ -25,11 +32,23 @@ export async function apiGet<T>(
     });
   }
 
+  let authToken = token;
+  if (token) {
+    try {
+      authToken = await tokenManager.refreshIfNeeded() || token;
+    } catch (error: any) {
+      if (error.message === 'REFRESH_TOKEN_EXPIRED' || error.message === 'NO_REFRESH_TOKEN') {
+        if (logoutCallback) logoutCallback();
+        throw new ApiError('Session expired. Please login again.', 401);
+      }
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url.toString(), {
@@ -40,6 +59,10 @@ export async function apiGet<T>(
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (logoutCallback) logoutCallback();
+    }
+    
     throw new ApiError(
       data.message ?? `Request failed with status ${response.status}`,
       response.status
@@ -56,11 +79,23 @@ export async function apiPost<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
+  let authToken = token;
+  if (token) {
+    try {
+      authToken = await tokenManager.refreshIfNeeded() || token;
+    } catch (error: any) {
+      if (error.message === 'REFRESH_TOKEN_EXPIRED' || error.message === 'NO_REFRESH_TOKEN') {
+        if (logoutCallback) logoutCallback();
+        throw new ApiError('Session expired. Please login again.', 401);
+      }
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url, {
@@ -72,6 +107,10 @@ export async function apiPost<T>(
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (logoutCallback) logoutCallback();
+    }
+    
     throw new ApiError(
       data.message ?? `Request failed with status ${response.status}`,
       response.status
@@ -88,11 +127,23 @@ export async function apiPatch<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
+  let authToken = token;
+  if (token) {
+    try {
+      authToken = await tokenManager.refreshIfNeeded() || token;
+    } catch (error: any) {
+      if (error.message === 'REFRESH_TOKEN_EXPIRED' || error.message === 'NO_REFRESH_TOKEN') {
+        if (logoutCallback) logoutCallback();
+        throw new ApiError('Session expired. Please login again.', 401);
+      }
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url, {
@@ -104,6 +155,10 @@ export async function apiPatch<T>(
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (logoutCallback) logoutCallback();
+    }
+    
     throw new ApiError(
       data.message ?? data.error ?? `Request failed with status ${response.status}`,
       response.status
@@ -120,11 +175,23 @@ export async function apiPut<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
+  let authToken = token;
+  if (token) {
+    try {
+      authToken = await tokenManager.refreshIfNeeded() || token;
+    } catch (error: any) {
+      if (error.message === 'REFRESH_TOKEN_EXPIRED' || error.message === 'NO_REFRESH_TOKEN') {
+        if (logoutCallback) logoutCallback();
+        throw new ApiError('Session expired. Please login again.', 401);
+      }
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url, {
@@ -136,6 +203,10 @@ export async function apiPut<T>(
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (logoutCallback) logoutCallback();
+    }
+    
     throw new ApiError(
       data.message ?? data.error ?? `Request failed with status ${response.status}`,
       response.status
@@ -148,11 +219,23 @@ export async function apiPut<T>(
 export async function apiDelete<T>(path: string, token?: string): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
+  let authToken = token;
+  if (token) {
+    try {
+      authToken = await tokenManager.refreshIfNeeded() || token;
+    } catch (error: any) {
+      if (error.message === 'REFRESH_TOKEN_EXPIRED' || error.message === 'NO_REFRESH_TOKEN') {
+        if (logoutCallback) logoutCallback();
+        throw new ApiError('Session expired. Please login again.', 401);
+      }
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(url, {
@@ -163,6 +246,10 @@ export async function apiDelete<T>(path: string, token?: string): Promise<T> {
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (logoutCallback) logoutCallback();
+    }
+    
     throw new ApiError(
       data.message ?? `Request failed with status ${response.status}`,
       response.status

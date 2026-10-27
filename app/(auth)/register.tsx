@@ -59,7 +59,7 @@ export default function RegisterScreen() {
         { idToken },
         {
           onSuccess: (data) => {
-            register(data.data.email, data.data.name, data.data.token);
+            register(data.data.email, data.data.name, data.data.accessToken, data.data.refreshToken, data.data.expiresIn);
             router.replace('/(tabs)');
           },
           onError: (error: any) => {
