@@ -5,6 +5,7 @@ export function searchProducts(
   params: ProductSearchParams,
 ): Promise<ProductsApiResponse> {
   return apiGet<ProductsApiResponse>('/product/search-product', {
+    query: params.query,
     page: params.page ?? 1,
     limit: params.limit,
     sortBy: params.sortBy ?? 'newest',

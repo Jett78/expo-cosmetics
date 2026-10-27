@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   Pressable,
   Dimensions,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,13 +18,19 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '../../src/hooks/useAppTheme';
-import { useActiveProducts } from '../../src/services/product/hooks';
+import { useInfiniteProducts } from '../../src/services/product/hooks';
 import { useRecentSearches } from '../../src/hooks/useRecentSearches';
 import { popularSearches } from '../../src/data/search';
 import { spacing, radius, typography } from '../../src/design-system';
 import type { ApiProduct } from '../../src/types';
 import ProductCard from '../../src/components/ProductCard/Card';
 import { withTabScreenTransition } from '../../src/components/TabScreenTransition';
+import FilterBottomSheet from '../../src/components/Filter/FilterBottomSheet';
+import SortDropdown from '../../src/components/Filter/SortDropdown';
+import { useShopFilter, ShopFilterProvider } from '../../src/context/ShopFilterContext';
+import { useCategories } from '../../src/services/category/hooks';
+import { useBrands } from '../../src/services/brand/hooks';
+import { useTabBarVisibility } from '../../src/context/TabBarVisibilityContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
@@ -32,21 +39,33 @@ function SearchScreen() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ query?: string; brandId?: string }>();
-  const { data: allProducts, isLoading, isRefetching, refetch } = useActiveProducts();
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
+  const { setTabBarHidden } = useTabBarVisibility();
+  const {
+    filters,
+    setCategoryId,
+    setBrandId,
+    setRating,
+    setMinPrice,
+    setMaxPrice,
+    resetFilters,
+    activeFilterCount,
+    hasActiveFilters,
+  } = useShopFilter();
+
+  const { data: categories } = useCategories();
+  const { data: brands } = useBrands();
 
   const getInitialQuery = useCallback(() => {
     if (params.query) return params.query;
-    if (params.brandId && allProducts) {
-      const product = allProducts.find((p) => p.brand?.id === params.brandId);
-      return product?.brand?.name ?? '';
-    }
     return '';
-  }, [params.query, params.brandId, allProducts]);
+  }, [params.query]);
 
   const [query, setQuery] = useState(getInitialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(getInitialQuery);
   const [isFocused, setIsFocused] = useState(false);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [showSortSheet, setShowSortSheet] = useState(false);
 
   React.useEffect(() => {
     const newQuery = getInitialQuery();
@@ -63,17 +82,29 @@ function SearchScreen() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const filteredProducts = useMemo(() => {
-    if (!debouncedQuery.trim() || !allProducts) return [];
-    const q = debouncedQuery.toLowerCase();
-    return allProducts.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.brand?.name?.toLowerCase().includes(q) ||
-        p.category?.name?.toLowerCase().includes(q) ||
-        p.tags?.some((t) => t.name?.toLowerCase().includes(q))
-    );
-  }, [debouncedQuery, allProducts]);
+  useEffect(() => {
+    setTabBarHidden(showFilterSheet || showSortSheet);
+  }, [showFilterSheet, showSortSheet, setTabBarHidden]);
+
+  const {
+    data: infiniteData,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteProducts({
+    query: debouncedQuery.trim() || undefined,
+    brandId: params.brandId || filters.brandId || undefined,
+    categoryId: filters.categoryId || undefined,
+    minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
+    maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+    rating: filters.rating || undefined,
+    sortBy: filters.sortBy,
+  });
+
+  const filteredProducts = infiniteData?.products ?? [];
 
   const handleSearch = useCallback((text: string) => {
     setQuery(text);
@@ -99,6 +130,76 @@ function SearchScreen() {
     addSearch(term);
     Keyboard.dismiss();
   }, [addSearch]);
+
+  const findCategoryName = useCallback(
+    (id: string): string => {
+      if (!categories) return '';
+      const search = (cats: typeof categories): string | null => {
+        for (const cat of cats) {
+          if (cat.id === id) return cat.name;
+          const found = search(cat.subcategories);
+          if (found) return found;
+        }
+        return null;
+      };
+      return search(categories) ?? '';
+    },
+    [categories],
+  );
+
+  const findBrandName = useCallback(
+    (id: string): string => {
+      if (!brands) return '';
+      return brands.find((b) => b.id === id)?.name ?? '';
+    },
+    [brands],
+  );
+
+  const activeChips = useMemo(() => {
+    const chips: { id: string; label: string; onRemove: () => void }[] = [];
+
+    if (filters.categoryId) {
+      chips.push({
+        id: 'category',
+        label: findCategoryName(filters.categoryId),
+        onRemove: () => setCategoryId(null),
+      });
+    }
+    if (filters.brandId) {
+      chips.push({
+        id: 'brand',
+        label: findBrandName(filters.brandId),
+        onRemove: () => setBrandId(null),
+      });
+    }
+    if (filters.minPrice || filters.maxPrice) {
+      const min = filters.minPrice || '0';
+      const max = filters.maxPrice || '∞';
+      chips.push({
+        id: 'price',
+        label: `Rs. ${min} - ${max}`,
+        onRemove: () => {
+          setMinPrice('');
+          setMaxPrice('');
+        },
+      });
+    }
+    if (filters.rating) {
+      chips.push({
+        id: 'rating',
+        label: `${filters.rating}+ stars`,
+        onRemove: () => setRating(null),
+      });
+    }
+
+    return chips;
+  }, [filters, findCategoryName, findBrandName, setCategoryId, setBrandId, setMinPrice, setMaxPrice, setRating]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderProduct = useCallback(
     ({ item }: { item: ApiProduct }) => <ProductCard product={item} showWishlist={false} width={CARD_WIDTH} />,
@@ -216,45 +317,145 @@ function SearchScreen() {
           )}
         />
       ) : (
-        <FlatList
-          key="products"
-          data={filteredProducts}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.productRow}
-          contentContainerStyle={styles.productListContent}
-          showsVerticalScrollIndicator={false}
-          renderItem={renderProduct}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={() => {
-                refetch();
-              }}
-              tintColor={colors.accent}
-              colors={[colors.accent]}
-            />
-          }
-          ListEmptyComponent={
-            hasQuery && !hasResults ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="search-outline" size={56} color={colors.borderStrong} />
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  No results found
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                  Try a different search term or browse popular searches
-                </Text>
-              </View>
-            ) : undefined
-          }
-        />
+        <View style={{ flex: 1 }}>
+          {/* Filter & Sort Bar */}
+          <View style={[styles.filterBar, { borderBottomColor: colors.borderSubtle }]}>
+            <Pressable
+              onPress={() => setShowFilterSheet(true)}
+              style={[
+                styles.filterBtn,
+                { backgroundColor: hasActiveFilters ? colors.accent : colors.surfaceMuted, borderColor: hasActiveFilters ? colors.accent : colors.borderStrong },
+              ]}
+            >
+              <Ionicons
+                name="options-outline"
+                size={16}
+                color={hasActiveFilters ? colors.textInverse : colors.textPrimary}
+              />
+              <Text
+                style={[
+                  typography.captionLarge,
+                  { color: hasActiveFilters ? colors.textInverse : colors.textPrimary, fontWeight: '600' },
+                ]}
+              >
+                Filter
+              </Text>
+              {activeFilterCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: hasActiveFilters ? colors.textInverse : colors.accent }]}>
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: hasActiveFilters ? colors.accent : colors.textInverse, fontSize: 10 },
+                    ]}
+                  >
+                    {activeFilterCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            <Pressable
+              onPress={() => setShowSortSheet(true)}
+              style={[styles.filterBtn, { backgroundColor: colors.surfaceMuted, borderColor: colors.borderStrong }]}
+            >
+              <Ionicons name="swap-vertical" size={16} color={colors.textPrimary} />
+              <Text style={[typography.captionLarge, { color: colors.textPrimary, fontWeight: '600' }]}>
+                Sort
+              </Text>
+            </Pressable>
+          </View>
+
+          <FlatList
+            key="products"
+            data={filteredProducts}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={styles.productRow}
+            contentContainerStyle={styles.productListContent}
+            showsVerticalScrollIndicator={false}
+            renderItem={renderProduct}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={() => {
+                  refetch();
+                }}
+                tintColor={colors.accent}
+                colors={[colors.accent]}
+              />
+            }
+            ListHeaderComponent={
+              activeChips.length > 0 ? (
+                <View style={styles.activeChipsContainer}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeChipsScroll}>
+                    {activeChips.map((chip) => (
+                      <Pressable
+                        key={chip.id}
+                        onPress={chip.onRemove}
+                        style={[styles.activeChip, { backgroundColor: colors.accentLight, borderColor: colors.accent }]}
+                      >
+                        <Text style={[typography.caption, { color: colors.textInverse }]}>{chip.label}</Text>
+                        <Ionicons name="close-circle" size={16} color={colors.textInverse} />
+                      </Pressable>
+                    ))}
+                    {activeChips.length > 1 && (
+                      <Pressable onPress={resetFilters} style={[styles.activeChip, { borderColor: colors.borderStrong }]}>
+                        <Text style={[typography.caption, { color: colors.danger }]}>Clear All</Text>
+                      </Pressable>
+                    )}
+                  </ScrollView>
+                </View>
+              ) : undefined
+            }
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <View style={styles.loadingMore}>
+                  <ActivityIndicator size="small" color={colors.accent} />
+                </View>
+              ) : undefined
+            }
+            ListEmptyComponent={
+              hasQuery && !hasResults ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="search-outline" size={56} color={colors.borderStrong} />
+                  <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                    No results found
+                  </Text>
+                  <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                    Try a different search term or adjust your filters
+                  </Text>
+                  {hasActiveFilters && (
+                    <Pressable
+                      onPress={resetFilters}
+                      style={[styles.clearFiltersBtn, { backgroundColor: colors.accent }]}
+                    >
+                      <Text style={[typography.button, { color: colors.textInverse }]}>Clear Filters</Text>
+                    </Pressable>
+                  )}
+                </View>
+              ) : undefined
+            }
+          />
+        </View>
       )}
+
+      <FilterBottomSheet visible={showFilterSheet} onClose={() => setShowFilterSheet(false)} />
+      <SortDropdown visible={showSortSheet} onClose={() => setShowSortSheet(false)} />
     </View>
   );
 }
 
-export default withTabScreenTransition(SearchScreen, 'bottom');
+function SearchScreenWithProvider() {
+  return (
+    <ShopFilterProvider>
+      <SearchScreen />
+    </ShopFilterProvider>
+  );
+}
+
+export default withTabScreenTransition(SearchScreenWithProvider, 'bottom');
 
 const styles = StyleSheet.create({
   container: {
@@ -360,5 +561,55 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     ...typography.body,
     textAlign: 'center',
+  },
+  filterBar: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  badge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  activeChipsContainer: {
+    marginBottom: spacing.md,
+  },
+  activeChipsScroll: {
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
+  activeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  loadingMore: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  clearFiltersBtn: {
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
   },
 });

@@ -70,7 +70,7 @@ export function useProductBySlug(slug: string) {
   });
 }
 
-export function useInfiniteProducts(params: { sortBy?: string; brandId?: string; categoryId?: string; minPrice?: number; maxPrice?: number; rating?: number }) {
+export function useInfiniteProducts(params: { query?: string; sortBy?: string; brandId?: string; categoryId?: string; minPrice?: number; maxPrice?: number; rating?: number }) {
   return useInfiniteQuery({
     queryKey: ['products', 'infinite', params],
     queryFn: ({ pageParam = 1 }) => searchProducts({ ...params, page: pageParam }),

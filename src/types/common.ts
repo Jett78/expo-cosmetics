@@ -1,4 +1,5 @@
 export type ProductSearchParams = {
+  query?: string;
   page?: number;
   limit?: number;
   sortBy?: string;
