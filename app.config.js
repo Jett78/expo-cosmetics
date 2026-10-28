@@ -59,8 +59,8 @@ module.exports = {
       [
         "expo-notifications",
         {
-          icon: "./assets/icon.png",
-          color: "#FDF8F6",
+          icon: "./assets/la-cos.png",
+          color: "#EE008C",
           defaultChannel: "orders",
         },
       ],
