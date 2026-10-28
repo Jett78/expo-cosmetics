@@ -26,6 +26,7 @@ import { useCart } from '../../src/services/cart/hooks';
 import { useValidateCoupon } from '../../src/services/coupon/hooks';
 import { useDeliveryPricing } from '../../src/services/delivery-pricing/hooks';
 import { useCreateOrder } from '../../src/services/order/hooks';
+import { useSiteSetting } from '../../src/services/site-setting/hooks';
 import type { ApiCartItem, ApiImageLink } from '../../src/types/api-cart';
 import type { Coupon } from '../../src/types/coupon';
 import type { CreateOrderItemInput } from '../../src/types/order';
@@ -154,6 +155,7 @@ export default function PaymentScreen() {
   } = useDeliveryPricing();
   const createOrder = useCreateOrder(token);
   const validateCoupon = useValidateCoupon(token);
+  const { data: siteSetting } = useSiteSetting();
 
   const [paymentMethod, setPaymentMethod] = React.useState('');
   const [deliveryType, setDeliveryType] = React.useState('');
@@ -172,6 +174,13 @@ export default function PaymentScreen() {
   const outofvalleyprice = pricingList.find((d) => d.name === 'outsidevalley')?.price ?? 0;
 
   const cartItems = cart?.items ?? [];
+
+  const fonepayQrUrl = siteSetting?.fonepayQrUrlLink?.startsWith('http')
+    ? siteSetting.fonepayQrUrlLink
+    : siteSetting?.fonepayQrUrl
+      ? `${API_BASE_URL.replace('/v1', '')}/${siteSetting.fonepayQrUrl.replace(/^\//, '')}`
+      : undefined;
+  const qrSource = fonepayQrUrl ? { uri: fonepayQrUrl } : FONEPAY_QR;
 
   React.useEffect(() => {
     if (!address) return;
@@ -659,7 +668,7 @@ export default function PaymentScreen() {
           {paymentMethod === 'Online Payment' && (
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <Image
-                source={FONEPAY_QR}
+                source={qrSource}
                 style={styles.qrImage}
                 contentFit='contain'
                 accessibilityLabel='Fonepay payment QR code'

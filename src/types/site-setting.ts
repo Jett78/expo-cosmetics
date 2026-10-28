@@ -14,6 +14,8 @@ export type SiteSetting = {
   metaDescription: string | null;
   metaKeywords: string | null;
   googleMap: string | null;
+  fonepayQrUrl: string | null;
+  fonepayQrUrlLink: string | null;
   createdAt: string;
   updatedAt: string;
 };
