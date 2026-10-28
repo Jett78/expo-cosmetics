@@ -95,6 +95,7 @@ export default function ProductDetailScreen() {
     getCartItemCount,
     favoriteProducts,
     isAuthenticated,
+    showLoginModal,
     serverCartItemCount,
     serverWishlistItemCount,
   } = useCommerce();
@@ -227,6 +228,11 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    if (!isAuthenticated) {
+      showLoginModal();
+      return;
+    }
 
     const attributeIds = Object.values(selectedAttributes)
       .filter(Boolean)
