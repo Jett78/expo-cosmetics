@@ -51,25 +51,47 @@ export async function apiGet<T>(
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      if (logoutCallback) logoutCallback();
+    clearTimeout(timeoutId);
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      throw new ApiError(
+        response.ok ? 'Invalid server response' : `Request failed: ${response.statusText}`,
+        response.status
+      );
     }
-    
-    throw new ApiError(
-      data.message ?? `Request failed with status ${response.status}`,
-      response.status
-    );
-  }
 
-  return data as T;
+    if (!response.ok) {
+      if (response.status === 401) {
+        if (logoutCallback) logoutCallback();
+      }
+      
+      throw new ApiError(
+        data.message ?? data.error ?? `Request failed with status ${response.status}`,
+        response.status
+      );
+    }
+
+    return data as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new ApiError('Request timeout', 408);
+    }
+    throw error;
+  }
 }
 
 export async function apiPost<T>(
@@ -98,26 +120,48 @@ export async function apiPost<T>(
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      if (logoutCallback) logoutCallback();
+    clearTimeout(timeoutId);
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      throw new ApiError(
+        response.ok ? 'Invalid server response' : `Request failed: ${response.statusText}`,
+        response.status
+      );
     }
-    
-    throw new ApiError(
-      data.message ?? `Request failed with status ${response.status}`,
-      response.status
-    );
-  }
 
-  return data as T;
+    if (!response.ok) {
+      if (response.status === 401) {
+        if (logoutCallback) logoutCallback();
+      }
+      
+      throw new ApiError(
+        data.message ?? data.error ?? `Request failed with status ${response.status}`,
+        response.status
+      );
+    }
+
+    return data as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new ApiError('Request timeout', 408);
+    }
+    throw error;
+  }
 }
 
 export async function apiPatch<T>(
@@ -146,26 +190,48 @@ export async function apiPatch<T>(
     headers.Authorization = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      if (logoutCallback) logoutCallback();
+    clearTimeout(timeoutId);
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      throw new ApiError(
+        response.ok ? 'Invalid server response' : `Request failed: ${response.statusText}`,
+        response.status
+      );
     }
-    
-    throw new ApiError(
-      data.message ?? data.error ?? `Request failed with status ${response.status}`,
-      response.status
-    );
-  }
 
-  return data as T;
+    if (!response.ok) {
+      if (response.status === 401) {
+        if (logoutCallback) logoutCallback();
+      }
+      
+      throw new ApiError(
+        data.message ?? data.error ?? `Request failed with status ${response.status}`,
+        response.status
+      );
+    }
+
+    return data as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new ApiError('Request timeout', 408);
+    }
+    throw error;
+  }
 }
 
 export async function apiPut<T>(
@@ -194,26 +260,48 @@ export async function apiPut<T>(
     headers.Authorization = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      if (logoutCallback) logoutCallback();
+    clearTimeout(timeoutId);
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      throw new ApiError(
+        response.ok ? 'Invalid server response' : `Request failed: ${response.statusText}`,
+        response.status
+      );
     }
-    
-    throw new ApiError(
-      data.message ?? data.error ?? `Request failed with status ${response.status}`,
-      response.status
-    );
-  }
 
-  return data as T;
+    if (!response.ok) {
+      if (response.status === 401) {
+        if (logoutCallback) logoutCallback();
+      }
+      
+      throw new ApiError(
+        data.message ?? data.error ?? `Request failed with status ${response.status}`,
+        response.status
+      );
+    }
+
+    return data as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new ApiError('Request timeout', 408);
+    }
+    throw error;
+  }
 }
 
 export async function apiDelete<T>(path: string, token?: string): Promise<T> {
@@ -238,23 +326,45 @@ export async function apiDelete<T>(path: string, token?: string): Promise<T> {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      if (logoutCallback) logoutCallback();
+    clearTimeout(timeoutId);
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      throw new ApiError(
+        response.ok ? 'Invalid server response' : `Request failed: ${response.statusText}`,
+        response.status
+      );
     }
-    
-    throw new ApiError(
-      data.message ?? `Request failed with status ${response.status}`,
-      response.status
-    );
-  }
 
-  return data as T;
+    if (!response.ok) {
+      if (response.status === 401) {
+        if (logoutCallback) logoutCallback();
+      }
+      
+      throw new ApiError(
+        data.message ?? data.error ?? `Request failed with status ${response.status}`,
+        response.status
+      );
+    }
+
+    return data as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new ApiError('Request timeout', 408);
+    }
+    throw error;
+  }
 }
