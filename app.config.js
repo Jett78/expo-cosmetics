@@ -31,6 +31,7 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: "com.la.cosmetics",
       infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription:
           "Camera access is used for visual product search.",
         NSPhotoLibraryUsageDescription:
