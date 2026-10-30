@@ -21,6 +21,7 @@ import {
   type ComponentRef,
   type RefObject,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginModal from '../src/components/LoginModal';
 import PopupBannerModal from '../src/components/banners/PopupBannerModal';
 import { AppLoadingProvider } from '../src/context/AppLoadingContext';
@@ -48,6 +49,8 @@ let popupShownThisSession = false;
 
 const POPUP_FIRST_DELAY_MS = 2000;
 const POPUP_SWAP_DELAY_MS = 300;
+const POPUP_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+const POPUP_LAST_SHOWN_KEY = 'popup_banner_last_shown_at';
 
 function PopupBannerWrapper({ blurTarget }: { blurTarget: BlurViewProps['blurTarget'] }) {
   const { data: banners, isLoading } = useActiveBanners(10, 'POPUP');
@@ -57,6 +60,7 @@ function PopupBannerWrapper({ blurTarget }: { blurTarget: BlurViewProps['blurTar
   const queueRef = useRef<ApiBanner[]>([]);
   const queueIndexRef = useRef(0);
   const startedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const popupBanners = useMemo(
     () => (banners ?? []).filter((b) => b.type === 'POPUP'),
@@ -89,16 +93,34 @@ function PopupBannerWrapper({ blurTarget }: { blurTarget: BlurViewProps['blurTar
     }
 
     startedRef.current = true;
-    popupShownThisSession = true;
-    timerRef.current = setTimeout(() => {
-      queueRef.current = popupBanners;
-      queueIndexRef.current = 0;
-      showNextPopup();
-    }, POPUP_FIRST_DELAY_MS);
+
+    const schedulePopup = async () => {
+      try {
+        const lastShownAt = Number(await AsyncStorage.getItem(POPUP_LAST_SHOWN_KEY));
+        if (lastShownAt && Date.now() - lastShownAt < POPUP_COOLDOWN_MS) {
+          return;
+        }
+      } catch {
+        // storage unavailable – show anyway
+      }
+
+      if (!mountedRef.current) return;
+
+      popupShownThisSession = true;
+      timerRef.current = setTimeout(() => {
+        queueRef.current = popupBanners;
+        queueIndexRef.current = 0;
+        AsyncStorage.setItem(POPUP_LAST_SHOWN_KEY, String(Date.now())).catch(() => {});
+        showNextPopup();
+      }, POPUP_FIRST_DELAY_MS);
+    };
+
+    schedulePopup();
   }, [isLoading, popupBanners, showNextPopup]);
 
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
