@@ -140,7 +140,7 @@ function SummarySkeleton() {
 
 export default function PaymentScreen() {
   const { colors } = useAppTheme();
-  const { token, authLoaded, selectedShippingAddress, refreshCart, clearCart } = useCommerce();
+  const { token, authLoaded, selectedShippingAddress, clearCart } = useCommerce();
   const {
     data: cart,
     isPending: cartLoading,
@@ -333,7 +333,6 @@ export default function PaymentScreen() {
       },
       {
         onSuccess: (response) => {
-          refreshCart();
           clearCart();
           router.replace({
             pathname: '/checkout/success',

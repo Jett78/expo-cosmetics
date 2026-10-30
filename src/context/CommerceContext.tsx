@@ -72,7 +72,7 @@ type CommerceContextValue = {
   cartItems: CartItem[];
   checkout: () => void;
   checkoutComplete: boolean;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
   favoriteProducts: Product[];
   filteredProducts: Product[];
   filters: FilterState;
@@ -378,6 +378,28 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     [token, serverCartItems, deleteCartItemMutation, refreshCart]
   );
 
+  const clearCart = useCallback(async () => {
+    const knownIds = serverCartItems.map((item) => item.id);
+
+    setCartItems([]);
+    setServerCartItems([]);
+    setCheckoutComplete(false);
+    queryClient.removeQueries({ queryKey: ['cart'] });
+
+    if (!token) return;
+
+    let ids = knownIds;
+    try {
+      const res = await fetchCart(token);
+      ids = (res.cart?.items ?? []).map((item) => item.id);
+    } catch {
+      ids = knownIds;
+    }
+
+    await Promise.all(ids.map((id) => deleteCartItem(token, id).catch(() => {})));
+    queryClient.removeQueries({ queryKey: ['cart'] });
+  }, [token, serverCartItems]);
+
   const updateCartQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
       setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
@@ -486,10 +508,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
         setCheckoutComplete(true);
       },
       checkoutComplete,
-      clearCart: () => {
-        setCartItems([]);
-        setCheckoutComplete(false);
-      },
+      clearCart,
       favoriteProducts,
       filteredProducts,
       filters,
@@ -582,6 +601,7 @@ export const CommerceProvider = ({ children }: { children: React.ReactNode }) =>
     }),
     [
       addToCart,
+      clearCart,
       removeFromCart,
       updateCartQuantity,
       cartItems,
