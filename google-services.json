@@ -12,7 +12,20 @@
           "package_name": "com.la.cosmetics"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "814289549436-bm2jp00hibhr18h4pu8eeucn8gc277k8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.la.cosmetics",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "814289549436-bqijnqqbt0l3oui9f15qb20h20hgk7vm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBa0ziweosILgNfHdh7nFkEEZmQc1MCftw"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "814289549436-bqijnqqbt0l3oui9f15qb20h20hgk7vm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
