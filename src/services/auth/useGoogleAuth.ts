@@ -47,7 +47,11 @@ export function useGoogleAuth({ onSuccess, onError }: GoogleAuthCallbacks) {
       setNativeAvailable(false);
       return;
     }
-    setNativeAvailable(isNativeGoogleSigninAvailable());
+    try {
+      setNativeAvailable(isNativeGoogleSigninAvailable());
+    } catch (error) {
+      setNativeAvailable(false);
+    }
   }, []);
 
   const onSuccessRef = useRef(onSuccess);

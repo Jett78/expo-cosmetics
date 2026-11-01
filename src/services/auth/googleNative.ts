@@ -12,7 +12,11 @@ const loadNativeModule = (): GoogleSigninModule | null => {
 
   try {
     const mod = require('@react-native-google-signin/google-signin') as GoogleSigninModule;
-    nativeModule = mod && typeof mod.GoogleSignin?.signOut === 'function' ? mod : null;
+    if (mod && typeof mod.GoogleSignin?.configure === 'function') {
+      nativeModule = mod;
+    } else {
+      loadFailed = true;
+    }
   } catch (error) {
     nativeModule = null;
     loadFailed = true;
