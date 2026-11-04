@@ -2,6 +2,7 @@ import { File, UploadType } from 'expo-file-system';
 
 import { ApiError } from '../../lib/api-client';
 import { API_BASE_URL } from '../../lib/config';
+import { tokenManager } from '../auth/tokenManager';
 
 export type UploadImageFile = {
   uri: string;
@@ -42,6 +43,15 @@ export async function uploadImages(
 ): Promise<UploadImagesResponse> {
   const uploaded: UploadedImage[] = [];
 
+  let authToken = token;
+  try {
+    authToken = (await tokenManager.refreshIfNeeded()) || token;
+  } catch (error: any) {
+    if (error.message === 'REFRESH_TOKEN_EXPIRED' || error.message === 'NO_REFRESH_TOKEN') {
+      throw new ApiError('Session expired. Please login again.', 401);
+    }
+  }
+
   for (const file of files) {
     const uri = file.uri.startsWith('file://') ? file.uri : `file://${file.uri}`;
     const localFile = new File(uri);
@@ -50,7 +60,7 @@ export async function uploadImages(
       uploadType: UploadType.MULTIPART,
       fieldName: 'images',
       mimeType: file.type || 'image/jpeg',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authToken}` },
       parameters: { folder },
     });
 
