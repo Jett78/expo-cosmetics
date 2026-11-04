@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      html, body, #mapDiv {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="mapDiv"></div>
+      
+    <script nonce="pFXhFjdrLl0vpDFF1WjWVg">
+      function onEmbedLoad() {
+        initEmbed([null,null,null,null,null,[[[2,"spotlit",null,null,null,null,null,[null,null,null,null,null,null,null,null,null,null,11,null,[null,null,null,null,null,null,null,null,null,null,null,null,null,1]]]],null,null,[[null,null,null,null,null,null,null,null,null,null,null,null,null,[[["4173457737095464191","7883308724455238704"],"/g/11p777qknj",null,[276913212,853360441],null,null,null,null,null,null,null,null,null,null,"gcid:beauty_product_supplier"],0,0,null,null,0,null,0,0]]]],null,["en","np"],[null,null,null,"/maps/api/js/ApplicationService.GetEntityDetails","/maps/embed/upgrade204",null,"/maps/embed/record204"],null,null,null,null,null,null,null,null,"zwHravKRB6GYnesP5J-0wQE",null,null,null,[[[3532.84044363466,85.3360441,27.6913212],[0,0,0],null,13.10000038146973],null,0,[["0x39eb19b330ae44ff:0x6d6723846fe46c30","LA Cosmetics Nepal Baneswor, Near Chiya Adda, Naya Marga Galli Naya Marga, Kathmandu, Bagmati Province 44600",[27.6913212,85.3360441],"7883308724455238704"],"LA Cosmetics Nepal Baneswor",["Near Chiya Adda","Naya Marga Galli Naya Marga","Kathmandu, Bagmati Province 44600"],4.5,"95 reviews",null,null,"984-6615212",null,null,null,["https://lacosmeticsnepal.com/","lacosmeticsnepal.com",null,null,",AOvVaw2rsja7C6p8oQ0lgH55ArmA,,2ahUKEwiyterihu6XAxUhTGcHHeQPLRgQ61goEHoECAAQFA,"],"Beauty product supplier","Near Chiya Adda, Naya Marga Galli Naya Marga, Kathmandu, Bagmati Province 44600",null,null,null,null,null,null,null,null,null,null,null,null,null,"ChIJ_0SuMLMZ6zkRMGzkb4QjZ20",null,null,"2ahUKEwiyterihu6XAxUhTGcHHeQPLRgQ8BcoAHoECAAQAQ",null,null,["tel:9846615212"],null,null,null,1,["2ahUKEwiyterihu6XAxUhTGcHHeQPLRgQqtMBKAp6BAgAEAw",["7MV7M8RP+GC"],["M8RP+GC Kathmandu, Bagmati Province"],2],[[["Wednesday",3,[2026,11,4],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1],["Thursday",4,[2026,11,5],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1],["Friday",5,[2026,11,6],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1,["Tihar might affect these hours","Tihar",2]],["Saturday",6,[2026,11,7],[["11 AM–7 PM",[[11],[19]]]],0,1,["Tihar might affect these hours","Tihar",2]],["Sunday",7,[2026,11,8],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1,["Tihar/Lakshmi Puja might affect these hours","Tihar/Lakshmi Puja",2]],["Monday",1,[2026,11,9],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1,["Tihar might affect these hours","Tihar",2]],["Tuesday",2,[2026,11,10],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1,["Tihar/Bhai Dooj/Govardhan Puja might affect these hours","Tihar/Bhai Dooj/Govardhan Puja",2]]],[["Wednesday",3,[2026,11,4],[["10 AM–7:30 PM",[[10],[19,30]]]],0,1],0,1,null,["Open · Closes 7:30 PM",[[0,4,[null,[4281040703,4285388172]]]]],["Open · Closes 7:30 PM",[[0,4,[null,[4281040703,4285388172]]]]],null,[18,30],["Open",[[0,4,[null,[4281040703,4285388172]]]]]],3,null,null,null,1]]],null,null,null,0,null,null,null,null,null,null,[1]]);
+      }
+      function onApiLoad() {
+        var embed = document.createElement('script');
+        embed.src = "https://maps.gstatic.com/maps-api-v3/embed/js/66/12d/init_embed.js";
+        document.body.appendChild(embed);
+      }
+    </script>
+    <link rel="preload" href="https://maps.gstatic.com/maps-api-v3/embed/js/66/12d/init_embed.js" nonce="pFXhFjdrLl0vpDFF1WjWVg" as="script" />
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmL18misQw9KdwqGaw3zHkitj8vG6QF2Y&amp;paint_origin=&amp;libraries=geometry,search&amp;v=weekly&amp;loading=async&amp;language=en&amp;region=np&amp;experimentation=allowed&amp;callback=onApiLoad" nonce="pFXhFjdrLl0vpDFF1WjWVg" async defer></script>
+  </body>
+</html>

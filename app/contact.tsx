@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
+import MapView, { Marker } from 'react-native-maps';
 import * as yup from 'yup';
 
 import { Skeleton } from '../src/components/Skeleton';
@@ -121,6 +121,20 @@ function buildContactRows(
   return rows;
 }
 
+function extractCoordinates(googleMapHtml: string | null | undefined): { latitude: number; longitude: number } | null {
+  if (!googleMapHtml) return null;
+  const latMatch = googleMapHtml.match(/!3d(-?\d+\.?\d*)/);
+  const lngMatch = googleMapHtml.match(/!2d(-?\d+\.?\d*)/);
+  if (latMatch && lngMatch) {
+    const latitude = Number.parseFloat(latMatch[1]);
+    const longitude = Number.parseFloat(lngMatch[1]);
+    if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) {
+      return { latitude, longitude };
+    }
+  }
+  return null;
+}
+
 export default function ContactScreen() {
   const { colors } = useAppTheme();
   const {
@@ -132,7 +146,6 @@ export default function ContactScreen() {
   const createContact = useCreateContact();
 
   const [focusedField, setFocusedField] = React.useState<keyof ContactFormValues | null>(null);
-  const [mapLoaded, setMapLoaded] = React.useState(false);
 
   const openUrl = React.useCallback(async (url: string) => {
     try {
@@ -146,9 +159,8 @@ export default function ContactScreen() {
 
   const contactRows = React.useMemo(() => buildContactRows(setting, openUrl), [setting, openUrl]);
 
-  const mapHtml = React.useMemo(() => {
-    if (!setting?.googleMap) return null;
-    return `<!DOCTYPE html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><style>html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;background:#f2f2f2;}iframe{width:100%;height:100%;border:0;display:block;}</style></head><body>${setting.googleMap}</body></html>`;
+  const mapCoordinates = React.useMemo(() => {
+    return extractCoordinates(setting?.googleMap);
   }, [setting?.googleMap]);
 
   const handleSubmit = (values: ContactFormValues, { resetForm }: { resetForm: () => void }) => {
@@ -297,30 +309,26 @@ export default function ContactScreen() {
               <View style={[styles.mapCard, { backgroundColor: colors.surface }]}>
                 <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>VISIT US</Text>
                 <View style={[styles.mapWrap, { backgroundColor: colors.surfaceMuted }]}>
-                  {mapHtml ? (
-                    <>
-                      {!mapLoaded ? (
-                        <Skeleton
-                          width='100%'
-                          height={240}
-                          borderRadius={0}
-                          style={styles.mapSkeleton}
-                        />
-                      ) : null}
-                      <WebView
-                        source={{ html: mapHtml, baseUrl: 'https://www.google.com' }}
-                        originWhitelist={['*']}
-                        javaScriptEnabled
-                        domStorageEnabled
-                        scrollEnabled={false}
-                        onLoadEnd={() => setMapLoaded(true)}
-                        onError={(syntheticEvent) => {
-                          const { nativeEvent } = syntheticEvent;
-                          console.warn('WebView error:', nativeEvent);
-                        }}
-                        style={[styles.mapWebView, { opacity: mapLoaded ? 1 : 0 }]}
+                  {mapCoordinates ? (
+                    <MapView
+                      style={styles.mapView}
+                      initialRegion={{
+                        latitude: mapCoordinates.latitude,
+                        longitude: mapCoordinates.longitude,
+                        latitudeDelta: 0.005,
+                        longitudeDelta: 0.005,
+                      }}
+                      scrollEnabled={false}
+                      zoomEnabled={false}
+                      rotateEnabled={false}
+                      pitchEnabled={false}
+                    >
+                      <Marker
+                        coordinate={mapCoordinates}
+                        title={setting?.siteName || 'L.A. Cosmetics Nepal'}
+                        description={setting?.address || ''}
                       />
-                    </>
+                    </MapView>
                   ) : (
                     <View style={styles.mapFallback}>
                       <Ionicons name='map-outline' size={30} color={colors.textMuted} />
@@ -711,20 +719,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mapWebView: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-  },
-  mapSkeleton: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  mapView: {
+    width: '100%',
+    height: '100%',
   },
   mapFallback: {
     alignItems: 'center',
