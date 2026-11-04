@@ -102,7 +102,7 @@ export default function CartScreen() {
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
             Looks like you haven't added anything yet
           </Text>
-          <Link href="/" asChild>
+          <Link href="/(tabs)/shop" asChild>
             <TouchableOpacity
               style={StyleSheet.flatten([styles.exploreButton, { backgroundColor: colors.accent }])}
               activeOpacity={0.8}
@@ -223,7 +223,7 @@ export default function CartScreen() {
               </Text>
             </TouchableOpacity>
 
-            <Link href="/" asChild>
+            <Link href="/(tabs)/shop" asChild>
               <TouchableOpacity
                 style={StyleSheet.flatten([styles.continueButton, { borderColor: colors.borderStrong }])}
                 activeOpacity={0.7}
