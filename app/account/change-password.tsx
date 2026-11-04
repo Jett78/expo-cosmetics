@@ -6,14 +6,13 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as yup from 'yup';
 
@@ -137,7 +136,12 @@ export default function ChangePasswordScreen() {
   };
 
   const header = (
-    <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle }]}>
+    <View
+      style={[
+        styles.header,
+        { backgroundColor: colors.surface, borderBottomColor: colors.borderSubtle },
+      ]}
+    >
       <TouchableOpacity
         onPress={() => router.back()}
         style={[styles.backBtn, { backgroundColor: colors.surfaceMuted }]}
@@ -183,7 +187,7 @@ export default function ChangePasswordScreen() {
         edges={['top']}
       >
         {header}
-        <ScrollView
+        <KeyboardAwareScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
@@ -201,7 +205,7 @@ export default function ChangePasswordScreen() {
               </View>
             ))}
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     );
   }
@@ -243,133 +247,126 @@ export default function ChangePasswordScreen() {
     >
       {header}
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps='handled'
+        bottomOffset={24}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps='handled'
-        >
-          <View style={[styles.heroCard, { backgroundColor: colors.surface }]}>
-            <View style={[styles.heroIcon, { backgroundColor: colors.accentLight }]}>
-              <Ionicons name='key-outline' size={34} color={colors.accent} />
-            </View>
-            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
-              Secure Your Account
-            </Text>
-            <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-              Choose a strong password you haven't used here before.
-            </Text>
-            <View style={[styles.hintChip, { backgroundColor: colors.surfaceMuted }]}>
-              <Ionicons name='information-circle-outline' size={14} color={colors.textMuted} />
-              <Text style={[styles.hintText, { color: colors.textMuted }]}>
-                Minimum 8 characters
-              </Text>
-            </View>
+        <View style={[styles.heroCard, { backgroundColor: colors.surface }]}>
+          <View style={[styles.heroIcon, { backgroundColor: colors.accentLight }]}>
+            <Ionicons name='key-outline' size={34} color={colors.accent} />
           </View>
+          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>Secure Your Account</Text>
+          <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
+            Choose a strong password you haven't used here before.
+          </Text>
+          <View style={[styles.hintChip, { backgroundColor: colors.surfaceMuted }]}>
+            <Ionicons name='information-circle-outline' size={14} color={colors.textMuted} />
+            <Text style={[styles.hintText, { color: colors.textMuted }]}>Minimum 8 characters</Text>
+          </View>
+        </View>
 
-          <Formik
-            initialValues={{ oldPassword: '', newPassword: '', confirmPassword: '' }}
-            validationSchema={validationSchema}
-            onSubmit={handleSave}
-          >
-            {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-              <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
-                {(Object.keys(FIELD_CONFIG) as FieldName[]).map((field) => {
-                  const config = FIELD_CONFIG[field];
-                  const hasError = Boolean(touched[field] && errors[field]);
-                  const isFocused = focusedField === field;
+        <Formik
+          initialValues={{ oldPassword: '', newPassword: '', confirmPassword: '' }}
+          validationSchema={validationSchema}
+          onSubmit={handleSave}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+            <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+              {(Object.keys(FIELD_CONFIG) as FieldName[]).map((field) => {
+                const config = FIELD_CONFIG[field];
+                const hasError = Boolean(touched[field] && errors[field]);
+                const isFocused = focusedField === field;
 
-                  return (
-                    <View key={field} style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        {config.label}
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputWrapper,
-                          {
-                            borderBottomColor: isFocused
-                              ? colors.accent
-                              : hasError
-                                ? colors.danger
-                                : colors.borderStrong,
-                          },
-                        ]}
+                return (
+                  <View key={field} style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                      {config.label}
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputWrapper,
+                        {
+                          borderBottomColor: isFocused
+                            ? colors.accent
+                            : hasError
+                              ? colors.danger
+                              : colors.borderStrong,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={config.icon}
+                        size={18}
+                        color={isFocused ? colors.accent : colors.textSecondary}
+                      />
+                      <TextInput
+                        style={[styles.input, { color: colors.textPrimary }]}
+                        placeholder={config.placeholder}
+                        placeholderTextColor={colors.textMuted}
+                        value={values[field]}
+                        onChangeText={handleChange(field)}
+                        onFocus={() => setFocusedField(field)}
+                        onBlur={(e) => {
+                          handleBlur(field)(e);
+                          setFocusedField(null);
+                        }}
+                        secureTextEntry={!visibleFields[field]}
+                        autoCapitalize='none'
+                        autoCorrect={false}
+                      />
+                      <TouchableOpacity
+                        onPress={() => toggleField(field)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityLabel={
+                          visibleFields[field] ? 'Hide password' : 'Show password'
+                        }
                       >
                         <Ionicons
-                          name={config.icon}
+                          name={visibleFields[field] ? 'eye-off-outline' : 'eye-outline'}
                           size={18}
-                          color={isFocused ? colors.accent : colors.textSecondary}
+                          color={colors.textSecondary}
                         />
-                        <TextInput
-                          style={[styles.input, { color: colors.textPrimary }]}
-                          placeholder={config.placeholder}
-                          placeholderTextColor={colors.textMuted}
-                          value={values[field]}
-                          onChangeText={handleChange(field)}
-                          onFocus={() => setFocusedField(field)}
-                          onBlur={(e) => {
-                            handleBlur(field)(e);
-                            setFocusedField(null);
-                          }}
-                          secureTextEntry={!visibleFields[field]}
-                          autoCapitalize='none'
-                          autoCorrect={false}
-                        />
-                        <TouchableOpacity
-                          onPress={() => toggleField(field)}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          accessibilityLabel={
-                            visibleFields[field] ? 'Hide password' : 'Show password'
-                          }
-                        >
-                          <Ionicons
-                            name={visibleFields[field] ? 'eye-off-outline' : 'eye-outline'}
-                            size={18}
-                            color={colors.textSecondary}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                      {hasError && (
-                        <Text style={[styles.errorText, { color: colors.danger }]}>
-                          {errors[field]}
-                        </Text>
-                      )}
+                      </TouchableOpacity>
                     </View>
-                  );
-                })}
+                    {hasError && (
+                      <Text style={[styles.errorText, { color: colors.danger }]}>
+                        {errors[field]}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
 
-                <View style={styles.tipsRow}>
-                  <Ionicons name='shield-checkmark-outline' size={14} color={colors.success} />
-                  <Text style={[styles.tipsText, { color: colors.textMuted }]}>
-                    You'll be signed out on this device after updating.
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.submitButton, { backgroundColor: colors.accent }]}
-                  onPress={() => handleSubmit()}
-                  disabled={changePasswordMutation.isPending}
-                  activeOpacity={0.85}
-                  accessibilityLabel='Update password'
-                >
-                  {changePasswordMutation.isPending ? (
-                    <ActivityIndicator size='small' color='#FFFFFF' />
-                  ) : (
-                    <>
-                      <Ionicons name='lock-closed-outline' size={17} color='#FFFFFF' />
-                      <Text style={styles.submitButtonText}>Update Password</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+              <View style={styles.tipsRow}>
+                <Ionicons name='shield-checkmark-outline' size={14} color={colors.success} />
+                <Text style={[styles.tipsText, { color: colors.textMuted }]}>
+                  You'll be signed out on this device after updating.
+                </Text>
               </View>
-            )}
-          </Formik>
-        </ScrollView>
-      </KeyboardAvoidingView>
+
+              <TouchableOpacity
+                style={[styles.submitButton, { backgroundColor: colors.accent }]}
+                onPress={() => handleSubmit()}
+                disabled={changePasswordMutation.isPending}
+                activeOpacity={0.85}
+                accessibilityLabel='Update password'
+              >
+                {changePasswordMutation.isPending ? (
+                  <ActivityIndicator size='small' color='#FFFFFF' />
+                ) : (
+                  <>
+                    <Ionicons name='lock-closed-outline' size={17} color='#FFFFFF' />
+                    <Text style={styles.submitButtonText}>Update Password</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </Formik>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

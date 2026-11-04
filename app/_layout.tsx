@@ -10,6 +10,7 @@ import { ThemeProvider } from '@rneui/themed';
 import { BlurTargetView, type BlurViewProps } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
@@ -62,10 +63,7 @@ function PopupBannerWrapper({ blurTarget }: { blurTarget: BlurViewProps['blurTar
   const startedRef = useRef(false);
   const mountedRef = useRef(true);
 
-  const popupBanners = useMemo(
-    () => (banners ?? []).filter((b) => b.type === 'POPUP'),
-    [banners]
-  );
+  const popupBanners = useMemo(() => (banners ?? []).filter((b) => b.type === 'POPUP'), [banners]);
 
   const showNextPopup = useCallback(() => {
     const next = queueRef.current[queueIndexRef.current];
@@ -208,33 +206,35 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <BlurTargetView ref={blurTargetRef} style={{ flex: 1 }}>
-        <QueryProvider>
-          <AppLoadingProvider>
-            <CommerceProvider>
-              <TabBarVisibilityProvider>
-                <AppThemeProvider>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: lightColors.background },
-                    }}
-                  >
-                    <Stack.Screen
-                      name='product/[slug]'
-                      options={{ animation: 'slide_from_right' }}
-                    />
-                  </Stack>
-                  <StatusBar style='dark' />
-                  <LoginModalWrapper />
-                  <PopupBannerWrapper blurTarget={blurTargetRef} />
-                  <NotificationSetup />
-                </AppThemeProvider>
-              </TabBarVisibilityProvider>
-            </CommerceProvider>
-          </AppLoadingProvider>
-        </QueryProvider>
-      </BlurTargetView>
+      <KeyboardProvider statusBarTranslucent={true} navigationBarTranslucent={true}>
+        <BlurTargetView ref={blurTargetRef} style={{ flex: 1 }}>
+          <QueryProvider>
+            <AppLoadingProvider>
+              <CommerceProvider>
+                <TabBarVisibilityProvider>
+                  <AppThemeProvider>
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: lightColors.background },
+                      }}
+                    >
+                      <Stack.Screen
+                        name='product/[slug]'
+                        options={{ animation: 'slide_from_right' }}
+                      />
+                    </Stack>
+                    <StatusBar style='dark' />
+                    <LoginModalWrapper />
+                    <PopupBannerWrapper blurTarget={blurTargetRef} />
+                    <NotificationSetup />
+                  </AppThemeProvider>
+                </TabBarVisibilityProvider>
+              </CommerceProvider>
+            </AppLoadingProvider>
+          </QueryProvider>
+        </BlurTargetView>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }
