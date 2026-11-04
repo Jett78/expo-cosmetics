@@ -5,11 +5,12 @@ import type { ProductSearchParams } from '../../types';
 const PRODUCT_STALE_TIME = 2 * 60 * 1000; // 2 minutes
 export const SHELF_LIMIT = 10;
 
-export function useProducts(params: ProductSearchParams) {
+export function useProducts(params: ProductSearchParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['products', params],
     queryFn: () => searchProducts(params),
     staleTime: PRODUCT_STALE_TIME,
+    enabled: options?.enabled !== false,
     select: (data) => ({
       products: data.products.filteredProducts,
       totalPages: data.products.totalPages,
@@ -44,7 +45,7 @@ export function useActiveProducts() {
   });
 }
 
-export function useShelfProducts(params: { categoryId?: string; brandId?: string }) {
+export function useShelfProducts(params: { categoryId?: string; brandId?: string }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['products', 'shelf', params],
     queryFn: () =>
@@ -56,6 +57,7 @@ export function useShelfProducts(params: { categoryId?: string; brandId?: string
         brandId: params.brandId,
       }),
     staleTime: PRODUCT_STALE_TIME,
+    enabled: options?.enabled !== false,
     select: (data) => data.products.filteredProducts,
   });
 }

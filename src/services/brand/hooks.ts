@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '../../lib/api-client';
 import { fetchAllBrands, fetchFeaturedBrands } from './api';
 
-const BRAND_STALE_TIME = 5 * 60 * 1000;
+const BRAND_STALE_TIME = 10 * 60 * 1000;
 
 export function useBrands() {
   return useQuery({

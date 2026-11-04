@@ -145,6 +145,7 @@ export default function HomeScreen() {
           source={require("../../assets/la-cos.png")}
           style={styles.logo}
           contentFit="contain"
+          priority="high"
         />
         <View style={styles.headerIcons}>
           <Link href="/(tabs)/search" asChild>
@@ -232,6 +233,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryList}
+              initialNumToRender={5}
+              maxToRenderPerBatch={5}
+              windowSize={3}
               renderItem={({ item }) => (
                 <Link href={`/category/${item.slug}`} asChild>
                   <Pressable style={styles.categoryCard}>
@@ -240,6 +244,8 @@ export default function HomeScreen() {
                         source={{ uri: item.image }}
                         style={styles.categoryImage}
                         contentFit="cover"
+                        placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+                        transition={200}
                       />
                     ) : (
                       <View
@@ -299,6 +305,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.productList}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={3}
               renderItem={({ item }) => (
                 <ProductCard product={item} width={155} />
               )}
@@ -334,6 +343,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.productList}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={3}
               renderItem={({ item }) => (
                 <ProductCard product={item} width={155} />
               )}
@@ -369,6 +381,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.productList}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={3}
               renderItem={({ item }) => (
                 <ProductCard product={item} width={155} />
               )}
@@ -415,6 +430,9 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.productList}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={3}
               renderItem={({ item }) => (
                 <ProductCard product={item} width={155} />
               )}

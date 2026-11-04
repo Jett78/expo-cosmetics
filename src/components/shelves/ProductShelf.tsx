@@ -1,6 +1,6 @@
 import { Text } from '@rneui/themed';
 import { Link } from 'expo-router';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { spacing, typography } from '../../design-system';
@@ -25,9 +25,48 @@ export default function ProductShelf({
   viewAllHref,
 }: ProductShelfProps) {
   const { colors } = useAppTheme();
-  const { data: products, isLoading } = useShelfProducts({ categoryId, brandId });
+  const [hasBeenVisible, setHasBeenVisible] = useState(false);
+  
+  const { data: products, isLoading } = useShelfProducts(
+    { categoryId, brandId },
+    { enabled: hasBeenVisible }
+  );
+
+  const handleLayout = useCallback(() => {
+    if (!hasBeenVisible) {
+      setHasBeenVisible(true);
+    }
+  }, [hasBeenVisible]);
 
   const list = products ?? [];
+
+  if (!isLoading && !hasBeenVisible) {
+    return (
+      <View style={styles.section} onLayout={handleLayout}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleBlock}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
+            {subtitle ? (
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+            ) : null}
+          </View>
+          <Link href={viewAllHref} asChild>
+            <Pressable>
+              <Text style={[styles.viewAll, { color: colors.accent }]}>View All</Text>
+            </Pressable>
+          </Link>
+        </View>
+        <FlatList
+          data={[1, 2, 3]}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.productList}
+          renderItem={() => <ProductCardSkeleton width={155} />}
+          keyExtractor={(item) => String(item)}
+        />
+      </View>
+    );
+  }
 
   if (!isLoading && list.length === 0) return null;
 

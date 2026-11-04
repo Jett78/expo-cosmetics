@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '../../lib/api-client';
 import { fetchCategories, fetchFeaturedCategories, fetchFeaturedSubCategories } from './api';
 
-const CATEGORY_STALE_TIME = 5 * 60 * 1000; // 5 minutes
+const CATEGORY_STALE_TIME = 10 * 60 * 1000; // 10 minutes
 
 const retryOnServerError = (failureCount: number, error: Error) => {
   if (error instanceof ApiError && error.statusCode < 500) return false;

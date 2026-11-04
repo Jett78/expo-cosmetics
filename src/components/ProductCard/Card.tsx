@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Text } from '@rneui/themed';
 import { Image } from 'expo-image';
@@ -60,7 +60,7 @@ function getPriceFromAttribute(attr: ApiAttribute | null): { price: number; offe
   return { price, offeredPrice, hasOffer };
 }
 
-export default function ProductCard({ product, width, showWishlist = true, showCategory = true }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, width, showWishlist = true, showCategory = true }: ProductCardProps) {
   const { colors } = useAppTheme();
   const { isFavorite, toggleFavorite } = useCommerce();
 
@@ -134,6 +134,7 @@ export default function ProductCard({ product, width, showWishlist = true, showC
           style={styles.image}
           contentFit="contain"
           transition={200}
+          placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
         />
 
         {/* Badges */}
@@ -241,7 +242,9 @@ export default function ProductCard({ product, width, showWishlist = true, showC
       </View>
     </Pressable>
   );
-}
+});
+
+export default ProductCard;
 
 const styles = StyleSheet.create({
   card: {

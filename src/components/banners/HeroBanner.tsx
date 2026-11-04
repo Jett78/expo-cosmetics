@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { ImageBackground } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ type HeroBannerProps = {
   banners: ApiBanner[];
 };
 
-export default function HeroBanner({ banners }: HeroBannerProps) {
+const HeroBanner = memo(function HeroBanner({ banners }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
@@ -59,6 +59,8 @@ export default function HeroBanner({ banners }: HeroBannerProps) {
                 style={[styles.bannerImage, { width: ITEM_WIDTH }]}
                 contentFit="fill"
                 imageStyle={styles.bannerImageRadius}
+                placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+                transition={200}
               />
             </Pressable>
           );
@@ -77,7 +79,9 @@ export default function HeroBanner({ banners }: HeroBannerProps) {
       )}
     </View>
   );
-}
+});
+
+export default HeroBanner;
 
 const styles = StyleSheet.create({
   container: {
