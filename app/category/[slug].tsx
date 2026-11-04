@@ -27,10 +27,10 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 
 const SORT_OPTIONS = [
   { id: 'newest', name: 'Newest' },
-  { id: 'popular', name: 'Most Popular' },
-  { id: 'price-asc', name: 'Price: Low to High' },
-  { id: 'price-desc', name: 'Price: High to Low' },
-  { id: 'rating', name: 'Best Rated' },
+  { id: 'oldest', name: 'Oldest' },
+  { id: 'price_low_to_high', name: 'Price: Low to High' },
+  { id: 'price_high_to_low', name: 'Price: High to Low' },
+  { id: 'alphabetical', name: 'Alphabetical' },
 ];
 
 function findCategoryBySlug(categories: ApiCategory[], slug: string): ApiCategory | null {
@@ -279,7 +279,7 @@ export default function CategoryScreen() {
                   style={[
                     styles.sortOptionRow,
                     {
-                      backgroundColor: sortBy === option.id ? colors.accentLight : 'transparent',
+                      backgroundColor: sortBy === option.id ? colors.accent : 'transparent',
                     },
                   ]}
                 >
@@ -287,7 +287,7 @@ export default function CategoryScreen() {
                     style={[
                       typography.body,
                       {
-                        color: sortBy === option.id ? colors.accent : colors.textPrimary,
+                        color: sortBy === option.id ? '#FFFFFF' : colors.textPrimary,
                         fontWeight: sortBy === option.id ? '600' : '400',
                       },
                     ]}
@@ -295,7 +295,7 @@ export default function CategoryScreen() {
                     {option.name}
                   </Text>
                   {sortBy === option.id && (
-                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
                   )}
                 </Pressable>
               ))}
