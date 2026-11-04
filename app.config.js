@@ -47,6 +47,11 @@ module.exports = {
       googleServicesFile: "./google-services.json",
       permissions: ["CAMERA", "READ_MEDIA_IMAGES"],
       blockedPermissions: ["android.permission.RECORD_AUDIO"],
+      config: {
+        googleMaps: {
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY || "AIzaSyBa0ziweosILgNfHdh7nFkEEZmQc1MCftw",
+        },
+      },
     },
     web: {
       favicon: "./assets/la-cos.png",
@@ -71,6 +76,12 @@ module.exports = {
           photosPermission: "The app accesses your photos from your gallery.",
           cameraPermission:
             "The app uses your camera for visual product search.",
+        },
+      ],
+      [
+        "react-native-maps",
+        {
+          useGoogleMaps: true,
         },
       ],
       ...(GOOGLE_IOS_URL_SCHEME
